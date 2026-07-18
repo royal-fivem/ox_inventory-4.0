@@ -1,0 +1,88 @@
+import { max } from 'lodash';
+import { ItemData } from '../typings/item';
+
+export const Items: {
+  [key: string]: ItemData | undefined;
+} = {
+  water: {
+    name: 'water',
+    close: false,
+    label: 'Water Bottle',
+    description: 'Generic item description',
+    stack: true,
+    usable: true,
+    count: 0,
+  },
+  parachute: {
+    name: 'parachute',
+    close: false,
+    label: 'Parachute',
+    description: 'Generic item description',
+    stack: false,
+    usable: false,
+    count: 0,
+  },
+  military_backpack: {
+    name: 'military_backpack',
+    close: false,
+    label: 'Military Backpack',
+    description: 'Generic item description',
+    stack: false,
+    usable: false,
+    count: 0,
+  },
+  armor: {
+    name: 'armor',
+    close: false,
+    label: 'Armor',
+    description: 'Generic item description',
+    stack: false,
+    usable: false,
+    count: 0,
+  },
+  phone: {
+    name: 'phone',
+    close: false,
+    label: 'Phone',
+    description: 'Generic item description',
+    stack: false,
+    usable: false,
+    count: 0,
+  },
+  weapon_pistolxm3: {
+    name: 'weapon_pistolxm3',
+    close: false,
+    label: 'Pistol XM3',
+    description: 'Generic item description',
+    stack: false,
+    usable: false,
+    count: 0,
+  },
+  weapon_advancedrifle: {
+    name: 'weapon_advancedrifle',
+    close: false,
+    label: 'Advanced Rifle',
+    description: 'Generic item description',
+    stack: false,
+    usable: false,
+    count: 0,
+  },
+  lockpick: {
+    name: 'lockpick',
+    close: false,
+    label: 'Lockpick',
+    description: 'Generic item description',
+    stack: false,
+    usable: false,
+    count: 0,
+  },
+  rum: {
+    name: 'rum',
+    close: false,
+    label: 'Rum',
+    description: 'Generic item description',
+    stack: false,
+    usable: false,
+    count: 0,
+  },
+};
