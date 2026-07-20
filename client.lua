@@ -2456,37 +2456,3 @@ RegisterNUICallback('craftingEmote', function(data, cb)
         StopAnimTask(cache.ped, craftEmote.dict, craftEmote.clip, 3.0)
     end
 end)
-
-
--- LIMITLESS MECHANIC SHIT
-vehicleDiagnosticOpen = false
-vehicleDiagnosticPlate = nil
-RegisterNetEvent('ox_inventory:openVehicleDiagnostic', function(boneData, plate)
-    local left, right, accessError = lib.callback.await('ox_inventory:openInventory', false, nil, {})
-    invOpen = true
-    vehicleDiagnosticOpen = true
-    vehicleDiagnosticPlate = plate
-    SendNUIMessage({
-        action = 'openVehicleDiagnostic',
-        data = {
-            leftInventory = left,
-            vehicleBoneData = boneData
-        }
-    })
-    SetNuiFocus(true, true)
-end)
-
-RegisterNUICallback('vehicleDiagnostic:openPartStash', function(data, cb)
-    local success, stashId, err = lib.callback.await('ox_inventory:openPartStash', false, data.partName, vehicleDiagnosticPlate)
-    if not success then
-        -- surface error to UI
-        cb({ success = false, error = err })
-        return
-    end
-    
-    invOpen = false
-    -- vehicleDiagnosticOpen = false
-    exports.ox_inventory:openInventory('stash', stashId)
-    
-    cb({ success = true })
-end)
