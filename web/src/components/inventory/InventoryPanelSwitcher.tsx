@@ -3,28 +3,41 @@ import React, { useEffect, useCallback } from 'react';
 interface Props {
     activeIndex: number;
     setActiveIndex: React.Dispatch<React.SetStateAction<number>>;
+    hasExperience?: boolean;
 }
 
-const PAGES = ['Inventory', 'Health & Injuries', 'Crafting', 'Experience'];
+const EXPERIENCE_INDEX = 3;
 
-const InventoryPanelSwitcher: React.FC<Props> = ({ activeIndex, setActiveIndex }) => {
-    // Functional updates so we always step from the current page, never a
-    // stale closure value (which could otherwise double-step / skip a page).
-    const goBackward = useCallback(() => {
-        setActiveIndex((prev) => (prev - 1 + PAGES.length) % PAGES.length);
-    }, [setActiveIndex]);
+const ALL_PAGES = [
+    { label: 'Inventory', index: 0 },
+    { label: 'Health & Injuries', index: 1 },
+    { label: 'Crafting', index: 2 },
+    { label: 'Experience', index: EXPERIENCE_INDEX },
+];
 
-    const goForward = useCallback(() => {
-        setActiveIndex((prev) => (prev + 1) % PAGES.length);
-    }, [setActiveIndex]);
+const InventoryPanelSwitcher: React.FC<Props> = ({ activeIndex, setActiveIndex, hasExperience = false }) => {
+    const pages = ALL_PAGES.filter((p) => p.index !== EXPERIENCE_INDEX || hasExperience);
+    const step = useCallback(
+        (dir: number) => {
+            setActiveIndex((prev) => {
+                const order = ALL_PAGES.filter((p) => p.index !== EXPERIENCE_INDEX || hasExperience).map(
+                    (p) => p.index
+                );
+                const cur = order.indexOf(prev);
+                const base = cur === -1 ? 0 : cur;
+                return order[(base + dir + order.length) % order.length];
+            });
+        },
+        [hasExperience, setActiveIndex]
+    );
 
-    // keyboard shortcuts (Q = backward, E = forward). Registered once; ignores
-    // auto-repeat so holding the key doesn't fly through multiple pages.
+    const goBackward = useCallback(() => step(-1), [step]);
+    const goForward = useCallback(() => step(1), [step]);
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.repeat) return;
 
-            // don't switch pages while typing in a search/text field
             const target = e.target as HTMLElement | null;
             if (
                 target &&
@@ -59,13 +72,13 @@ const InventoryPanelSwitcher: React.FC<Props> = ({ activeIndex, setActiveIndex }
             </button>
 
             <div className="panel-switch-tabs">
-                {PAGES.map((page, i) => (
+                {pages.map((page) => (
                     <button
-                        key={page}
-                        className={`panel-switch-tab ${i === activeIndex ? 'active' : ''}`}
-                        onClick={() => setActiveIndex(i)}
+                        key={page.index}
+                        className={`panel-switch-tab ${page.index === activeIndex ? 'active' : ''}`}
+                        onClick={() => setActiveIndex(page.index)}
                     >
-                        {page}
+                        {page.label}
                     </button>
                 ))}
             </div>

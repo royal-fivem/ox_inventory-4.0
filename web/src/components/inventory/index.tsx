@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from '../../store';
 import { refreshSlots, selectRightInventory, setAdditionalMetadata, setupInventory } from '../../store/inventory';
 import { setInventorySettings } from '../../store/settings';
 import { fetchNui } from '../../utils/fetchNui';
+import { isEnvBrowser } from '../../utils/misc';
 import ShopPage from '../shop/ShopPage';
 import { useExitListener } from '../../hooks/useExitListener';
 import type { Inventory as InventoryProps } from '../../typings';
@@ -36,6 +37,28 @@ const Inventory: React.FC = () => {
   const isShop = rightInventory?.type === 'shop';
   const isHealthActive = inventoryVisible && activeIndex === HEALTH_INDEX;
   const healthData = useHealthData(isHealthActive);
+  const [hasExperience, setHasExperience] = useState(false);
+
+  useEffect(() => {
+    if (!inventoryVisible) return;
+
+    if (isEnvBrowser()) {
+      setHasExperience(true);
+      return;
+    }
+
+    fetchNui<unknown[]>('getExperience')
+      .then((data) => setHasExperience(Array.isArray(data) && data.length > 0))
+      .catch(() => setHasExperience(false));
+  }, [inventoryVisible]);
+
+  useNuiEvent<unknown[]>('setExperience', (data) => {
+    setHasExperience(Array.isArray(data) && data.length > 0);
+  });
+
+  useEffect(() => {
+    if (!hasExperience && activeIndex === EXPERIENCE_INDEX) setActiveIndex(0);
+  }, [hasExperience, activeIndex]);
 
   useEffect(() => {
     dispatch(closeContextMenu());
@@ -85,7 +108,11 @@ const Inventory: React.FC = () => {
       <Fade in={inventoryVisible}>
         <div className="inventory-wrapper">
           {!isShop && (
-            <InventoryPanelSwitcher activeIndex={activeIndex} setActiveIndex={setActiveIndex} />
+            <InventoryPanelSwitcher
+              activeIndex={activeIndex}
+              setActiveIndex={setActiveIndex}
+              hasExperience={hasExperience}
+            />
           )}
 
           {isShop ? (
