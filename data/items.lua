@@ -119,20 +119,11 @@ return {
 		stack = false,
 		consume = 0,
 		rarity = 'uncommon',
-		-- The phone doubles as an 11-slot container for SIM cards etc.
 		container = {
 			label = 'Phone',
-			slots = 11,
+			slots = 1,
 			maxWeight = 2000,
 		},
-		client = {
-			add = function(total)
-				if total > 0 then pcall(function() return exports.npwd:setPhoneDisabled(false) end) end
-			end,
-			remove = function(total)
-				if total < 1 then pcall(function() return exports.npwd:setPhoneDisabled(true) end) end
-			end
-		}
 	},
 
 	['mustard'] = {

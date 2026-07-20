@@ -688,33 +688,21 @@ lib.callback.register('ox_inventory:craftHiddenRecipe', function(source, items)
     return true, 'success'
 end)
 
--- ======================================================================
---  Phone SIM preview — returns the first two slots of the phone's
---  container so the utility side-boxes can show SIM cards while closed.
--- ======================================================================
 lib.callback.register('ox_inventory:getPhoneContents', function(source)
     local inv = Inventory(source)
     if not inv then return {} end
 
-    -- find the phone and its container id
-    local containerId
-    for _, item in pairs(inv.items) do
-        if item and item.name == 'phone' and item.metadata and item.metadata.container then
-            containerId = item.metadata.container
-            break
-        end
-    end
-    if not containerId then return {} end
+    local phone = inv.items[8] -- phone slot
+    if not (phone and phone.name == 'phone' and phone.metadata and phone.metadata.container) then return {} end
 
-    local container = Inventory(containerId)
+    local container = Inventory(phone.metadata.container)
     if not container or not container.items then return {} end
 
-    -- return the first two slots (false = empty), matching the two side boxes
-    local result = {}
-    for i = 1, 2 do
-        local item = container.items[i]
-        if item and item.name then
-            result[i] = {
+    local item = container.items[1]
+
+    if item and item.name then
+        return {
+            {
                 slot = item.slot,
                 name = item.name,
                 count = item.count,
@@ -722,11 +710,9 @@ lib.callback.register('ox_inventory:getPhoneContents', function(source)
                 metadata = item.metadata,
                 label = item.label,
                 rarity = item.rarity or (Items(item.name) and Items(item.name).rarity),
-            }
-        else
-            result[i] = false
-        end
+            },
+        }
     end
 
-    return result
+    return { false }
 end)
