@@ -2349,21 +2349,18 @@ RegisterNUICallback('getBackpackInventory', function(_, cb)
     cb(backpack)
 end)
 
--- c-experience integration: the Experience page UI lives here, backend lives in c-experience.
 RegisterNUICallback('getExperience', function(_, cb)
-    if GetResourceState('c-experience') ~= 'started' then return cb({}) end
-    local ok, data = pcall(function()
-        return exports['c-experience']:GetExperienceData()
-    end)
-    cb(ok and data or {})
+    if GetResourceState('royal-experience') ~= 'started' then
+        error('royal-experience is not started, cant get data.')
+        return cb({})
+    end
+    cb(exports['royal-experience']:GetExperienceData() or {})
 end)
 
--- c-experience pushes fresh data on XP change; relay it to the NUI.
-AddEventHandler('c-experience:ui:refresh', function(data)
+AddEventHandler('royal-experience:ui:refresh', function(data)
     SendNUIMessage({ action = 'setExperience', data = data })
 end)
 
--- Personal crafting page (CRAFTING inventory tab): always-available workbench.
 RegisterNUICallback('getPersonalCrafting', function(_, cb)
     cb(lib.callback.await('ox_inventory:getPersonalCrafting', false) or { categories = {}, recipes = {} })
 end)
