@@ -2349,6 +2349,26 @@ RegisterNUICallback('getBackpackInventory', function(_, cb)
     cb(backpack)
 end)
 
+RegisterNUICallback('getHealthData', function(_, cb)
+    local ped = cache.ped
+    local health = GetEntityHealth(ped)
+    local maxHealth = GetEntityMaxHealth(ped)
+    local healthPct = 0
+
+    if maxHealth > 100 then
+        healthPct = math.floor(((health - 100) / (maxHealth - 100)) * 100 + 0.5)
+    end
+
+    if healthPct < 0 then healthPct = 0 elseif healthPct > 100 then healthPct = 100 end
+
+    cb({
+        health = healthPct,
+        armor = GetPedArmour(ped),
+        stamina = 0,
+        injuries = {},
+    })
+end)
+
 RegisterNUICallback('getExperience', function(_, cb)
     if GetResourceState('royal-experience') ~= 'started' then
         error('royal-experience is not started, cant get data.')

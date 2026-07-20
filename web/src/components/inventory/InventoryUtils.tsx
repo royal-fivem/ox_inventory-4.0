@@ -40,7 +40,11 @@ const hotkeySlotConfigs: SlotConfig[] = [
     { slot: 5, label: 'Hotkey 5' },
 ];
 
-const InventoryUtils = () => {
+interface InventoryUtilsProps {
+    figureOnly?: boolean;
+}
+
+const InventoryUtils: React.FC<InventoryUtilsProps> = ({ figureOnly = false }) => {
     const { items, id, type, groups } = useAppSelector(selectLeftInventory);
     const containerInventory = useAppSelector(selectContainerInventory);
     const [phoneKey, setPhoneKey] = useState<string>('M');
@@ -176,23 +180,29 @@ const InventoryUtils = () => {
     
     return (
         <div className="utils-inventory" style={{position: 'relative', display: 'flex', justifyContent: 'space-between', width: '64vh', height: '60vh'}}>
-            <div className="utils-left-grid">
-                {leftSlotConfigs.map(renderSlot)}
-            </div>
+            {!figureOnly && (
+                <div className="utils-left-grid">
+                    {leftSlotConfigs.map(renderSlot)}
+                </div>
+            )}
 
             <div className="utils-center">
-                <div className="man-svg" style={{width: '26vh', height: '42vh', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1 }}>
+                <div style={{width: '26vh', height: '48vh', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1 }}>
                     <img style={{height: '90%', filter: 'drop-shadow(0px 0px 20px rgb(162, 202, 49))'}} src="https://files.catbox.moe/2benql.svg" />
                 </div>
             </div>
 
-            <div className="utils-right-grid">
-                {rightSlotConfigs.map(renderSlot)}
-            </div>
+            {!figureOnly && (
+                <div className="utils-right-grid">
+                    {rightSlotConfigs.map(renderSlot)}
+                </div>
+            )}
 
-            <div className="utils-hotkey-grid">
-                {hotkeySlotConfigs.map(renderSlot)}
-            </div>
+            {!figureOnly && (
+                <div className="utils-hotkey-grid">
+                    {hotkeySlotConfigs.map(renderSlot)}
+                </div>
+            )}
         </div>
     );
 };

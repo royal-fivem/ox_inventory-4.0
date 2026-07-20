@@ -20,7 +20,9 @@ import InventoryUtils from './InventoryUtils';
 import InventoryContainer from './InventoryContainer';
 import ExperiencePage from '../experience/ExperiencePage';
 import CraftingPage from '../crafting/CraftingPage';
+import HealthPage from '../health/HealthPage';
 
+const HEALTH_INDEX = 1;
 const CRAFTING_INDEX = 2;
 const EXPERIENCE_INDEX = 3;
 
@@ -93,6 +95,22 @@ const Inventory: React.FC = () => {
             </>
           ) : activeIndex === EXPERIENCE_INDEX ? (
             <ExperiencePage visible={inventoryVisible && activeIndex === EXPERIENCE_INDEX} />
+          ) : activeIndex === HEALTH_INDEX ? (
+            <>
+              <LeftInventory />
+
+              <InventoryUtils figureOnly />
+
+              <div
+                className="right-inventory-column"
+                style={{ display: 'flex', flexDirection: 'column', gap: '1vh', height: '100vh', overflowY: 'auto', overflowX: 'hidden' }}
+              />
+
+              <HealthPage visible={inventoryVisible && activeIndex === HEALTH_INDEX} />
+
+              <Tooltip />
+              <InventoryContext />
+            </>
           ) : activeIndex === CRAFTING_INDEX ? (
             <>
               <LeftInventory />
