@@ -660,9 +660,9 @@ lib.callback.register('ox_inventory:craftHiddenRecipe', function(source, items)
     if not craftedItem then return false, 'invalid_recipe' end
 
     local craftCount = (type(recipe.count) == 'number' and recipe.count) or 1
+    local ingredientMap = getIngredientMap(recipe)
 
-    -- verify the player still owns everything
-    for name, needed in pairs(recipe.ingredients) do
+    for name, needed in pairs(ingredientMap) do
         if Inventory.GetItemCount(inv, name) < needed then
             return false, 'insufficient_materials'
         end
@@ -672,7 +672,7 @@ lib.callback.register('ox_inventory:craftHiddenRecipe', function(source, items)
         return false, 'cannot_carry'
     end
 
-    for name, needed in pairs(recipe.ingredients) do
+    for name, needed in pairs(ingredientMap) do
         if needed > 0 then
             local removed = Inventory.RemoveItem(inv, name, needed)
             if not removed then return false, 'failed_to_remove_ingredient' end

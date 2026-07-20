@@ -21,6 +21,18 @@ interface Props {
 const FAV_KEY = 'ox_craft_favorites';
 const EMPTY_CELLS = (): (PlacedCell | null)[] => Array(9).fill(null);
 
+const matchRecipe = (recipes: CraftRecipe[], placed: Record<string, number>): CraftRecipe | null => {
+  const placedKeys = Object.keys(placed);
+  for (const r of recipes) {
+    const map: Record<string, number> = {};
+    for (const ing of r.ingredients) map[ing.name] = (map[ing.name] || 0) + ing.count;
+    const keys = Object.keys(map);
+    if (keys.length !== placedKeys.length) continue;
+    if (keys.every((k) => placed[k] === map[k])) return r;
+  }
+  return null;
+};
+
 const loadFavorites = (): Set<string> => {
   try {
     const raw = localStorage.getItem(FAV_KEY);
@@ -238,6 +250,14 @@ const CraftingPage: React.FC<Props> = ({ visible }) => {
       const items: Record<string, number> = {};
       for (const c of cells) items[c.name] = (items[c.name] || 0) + c.count;
 
+      const matched = matchRecipe(config.recipes, items);
+      if (matched) {
+        restoreAll();
+        enqueue(matched);
+        setError(null);
+        return;
+      }
+
       const clearBench = () => setManualCells(EMPTY_CELLS());
 
       if (isEnvBrowser()) {
@@ -263,10 +283,10 @@ const CraftingPage: React.FC<Props> = ({ visible }) => {
       return;
     }
 
-    // known recipe mode
+    // known recipe mode (clicked a codex recipe)
     if (!selected || !isCraftable(selected)) return;
     enqueue(selected);
-  }, [manualMode, selected, isCraftable, enqueue, restoreCell]);
+  }, [manualMode, selected, isCraftable, enqueue, restoreCell, restoreAll, config.recipes]);
 
   const combineLabel = error
     ? error

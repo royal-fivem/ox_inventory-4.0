@@ -2371,7 +2371,6 @@ end)
 
 RegisterNUICallback('getExperience', function(_, cb)
     if GetResourceState('royal-experience') ~= 'started' then
-        error('royal-experience is not started, cant get data.')
         return cb({})
     end
     cb(exports['royal-experience']:GetExperienceData() or {})
@@ -2440,6 +2439,23 @@ RegisterCommand('+cancelPersonalCraft', function()
 end, false)
 RegisterCommand('-cancelPersonalCraft', function() end, false)
 RegisterKeyMapping('+cancelPersonalCraft', 'Cancel personal crafting', 'keyboard', 'X')
+
+local craftEmote = { dict = 'amb@world_human_tourist_map@male@base', clip = 'base' }
+local craftEmotePlaying = false
+
+RegisterNUICallback('craftingEmote', function(data, cb)
+    cb(1)
+
+    if data and data.active then
+        if craftEmotePlaying then return end
+        craftEmotePlaying = true
+        Utils.PlayAnim(0, craftEmote.dict, craftEmote.clip, 3.0, 3.0, -1, 1, 0.0, 0, 0, 0)
+    else
+        if not craftEmotePlaying then return end
+        craftEmotePlaying = false
+        StopAnimTask(cache.ped, craftEmote.dict, craftEmote.clip, 3.0)
+    end
+end)
 
 
 -- LIMITLESS MECHANIC SHIT

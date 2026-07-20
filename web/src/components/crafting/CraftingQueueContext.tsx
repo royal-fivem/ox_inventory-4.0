@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { fetchNui } from '../../utils/fetchNui';
 import { isEnvBrowser } from '../../utils/misc';
 import { CraftRecipe, QueueJob } from './types';
@@ -34,6 +34,16 @@ export const CraftingQueueProvider: React.FC<{ children: React.ReactNode }> = ({
     if (isEnvBrowser()) return;
     fetchNui('craftPersonalRecipe', { recipeId: recipe.id, count: 1 }).catch(() => {});
   }, []);
+
+  // Play a crafting emote on the ped while the queue is running, and stop it as
+  // soon as the queue empties (all crafts done / cancelled).
+  const emoteActiveRef = useRef(false);
+  useEffect(() => {
+    const crafting = jobs.length > 0;
+    if (crafting === emoteActiveRef.current) return;
+    emoteActiveRef.current = crafting;
+    if (!isEnvBrowser()) fetchNui('craftingEmote', { active: crafting }).catch(() => {});
+  }, [jobs]);
 
   // start the next waiting job when nothing is active
   useEffect(() => {
