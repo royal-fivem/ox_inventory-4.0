@@ -1093,13 +1093,6 @@ function client.closeInventory(server)
         currentCraftingStorageId = nil
         plyState.invOpen = false
         defaultInventory.coords = nil
-
-        vehicleDiagnosticPlate = nil
-        if vehicleDiagnosticOpen == true then
-            print('was true!')
-            vehicleDiagnosticOpen = false
-            TriggerEvent('limitless-jobs:mechanic:exitDiagnostic')
-        end
     end
 end
 

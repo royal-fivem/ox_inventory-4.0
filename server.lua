@@ -899,31 +899,3 @@ lib.addCommand('viewinv', {
 }, function(source, args)
     Inventory.InspectInventory(source, tonumber(args.invId) or args.invId)
 end)
-
-
-
--- MECHANIC SHIT - limitless-jobs:mechanic
-local PART_CATEGORIES = {
-    engine      = { label = 'Engine' },
-    brakes      = { label = 'Brakes' },
-    suspension  = { label = 'Suspension' },
-    transmission = { label = 'Transmission' },
-}
-
-lib.callback.register('ox_inventory:openPartStash', function(source, partName, plate)
-    local category = PART_CATEGORIES[partName]
-    print(category, partName)
-    if not category then return false, 'Invalid part category' end
-
-    local stashId = getPartStashId(plate, partName)
-
-    -- Lazy-register: safe to call even if it already exists
-    local stashLabel = ('%s - %s'):format(plate, category.label)
-    exports.ox_inventory:RegisterStash(stashId, stashLabel, 10, 10000, false, false)
-    return true, stashId
-end)
-
-function getPartStashId(plate, partName)
-    -- Unique, deterministic stash ID per vehicle per part
-    return ('vehicle_%s_%s'):format(plate:gsub('%s+', ''), partName)
-end
