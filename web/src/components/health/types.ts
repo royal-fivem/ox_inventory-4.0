@@ -1,9 +1,10 @@
 export interface Injury {
   id: string;
   label: string;
-  // 0-100, drives the severity colour of the pill
   severity: number;
   bodyPart?: string;
+  bleeding?: boolean;
+  healItem?: string;
 }
 
 export interface HealthData {

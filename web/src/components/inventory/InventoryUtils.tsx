@@ -5,6 +5,8 @@ import InventorySlot from './InventorySlot';
 import { getItemUrl, isSlotWithItem } from '../../helpers';
 import { fetchNui } from '../../utils/fetchNui';
 import { isEnvBrowser } from '../../utils/misc';
+import BodyFigure from '../health/BodyFigure';
+import { Injury } from '../health/types';
 
 const PHONE_SLOT = 8;
 
@@ -42,9 +44,10 @@ const hotkeySlotConfigs: SlotConfig[] = [
 
 interface InventoryUtilsProps {
     figureOnly?: boolean;
+    injuries?: Injury[];
 }
 
-const InventoryUtils: React.FC<InventoryUtilsProps> = ({ figureOnly = false }) => {
+const InventoryUtils: React.FC<InventoryUtilsProps> = ({ figureOnly = false, injuries }) => {
     const { items, id, type, groups } = useAppSelector(selectLeftInventory);
     const containerInventory = useAppSelector(selectContainerInventory);
     const [phoneKey, setPhoneKey] = useState<string>('M');
@@ -188,7 +191,7 @@ const InventoryUtils: React.FC<InventoryUtilsProps> = ({ figureOnly = false }) =
 
             <div className="utils-center">
                 <div style={{width: '26vh', height: '48vh', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1 }}>
-                    <img style={{height: '90%', filter: 'drop-shadow(0px 0px 20px rgb(162, 202, 49))'}} src="https://files.catbox.moe/2benql.svg" />
+                    <BodyFigure injuries={injuries} />
                 </div>
             </div>
 

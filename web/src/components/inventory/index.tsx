@@ -21,6 +21,8 @@ import InventoryContainer from './InventoryContainer';
 import ExperiencePage from '../experience/ExperiencePage';
 import CraftingPage from '../crafting/CraftingPage';
 import HealthPage from '../health/HealthPage';
+import HealthFigure from '../health/HealthFigure';
+import { useHealthData } from '../health/useHealthData';
 
 const HEALTH_INDEX = 1;
 const CRAFTING_INDEX = 2;
@@ -32,9 +34,9 @@ const Inventory: React.FC = () => {
   const dispatch = useAppDispatch();
   const rightInventory = useAppSelector(selectRightInventory);
   const isShop = rightInventory?.type === 'shop';
+  const isHealthActive = inventoryVisible && activeIndex === HEALTH_INDEX;
+  const healthData = useHealthData(isHealthActive);
 
-  // Switching pages must dismiss any open context menu / tooltip, otherwise a
-  // menu opened on one page keeps re-appearing on every page you flip to.
   useEffect(() => {
     dispatch(closeContextMenu());
     dispatch(closeTooltip());
@@ -99,14 +101,14 @@ const Inventory: React.FC = () => {
             <>
               <LeftInventory />
 
-              <InventoryUtils figureOnly />
+              <HealthFigure injuries={healthData.injuries} />
 
               <div
                 className="right-inventory-column"
                 style={{ display: 'flex', flexDirection: 'column', gap: '1vh', height: '100vh', overflowY: 'auto', overflowX: 'hidden' }}
               />
 
-              <HealthPage visible={inventoryVisible && activeIndex === HEALTH_INDEX} />
+              <HealthPage data={healthData} />
 
               <Tooltip />
               <InventoryContext />
@@ -125,7 +127,7 @@ const Inventory: React.FC = () => {
             <>
               <LeftInventory />
 
-              <InventoryUtils />
+              <InventoryUtils injuries={healthData.injuries}/>
 
               <div className="right-inventory-column" style={{ display: 'flex', flexDirection: 'column', gap: '1vh', height: '100vh', overflowY: 'auto', overflowX: 'hidden' }}>
                 <RightInventory />

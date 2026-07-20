@@ -3808,6 +3808,25 @@ $xpGreenDim: rgba(162, 202, 49, 0.55);
   margin-top: 0.4vh;
 }
 
+.health-figure {
+  position: relative;
+  height: 90%;
+  aspect-ratio: 714 / 1818;
+}
+
+.health-figure-img {
+  display: block;
+  height: 100%;
+  width: auto;
+  filter: drop-shadow(0 0 20px rgb(162, 202, 49));
+}
+
+.health-figure-recolor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 .health-segments {
   display: flex;
   gap: 0.6vh;
@@ -3837,33 +3856,106 @@ $xpGreenDim: rgba(162, 202, 49, 0.55);
 }
 
 .health-injury {
+  --sev: rgb(255, 45, 60);
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 1vh;
+  padding: 1.1vh 1.4vh 1.1vh 1.8vh;
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 80, 80, 0.14);
+  border-left: 3px solid var(--sev);
+}
+
+.health-injury-corners {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.health-injury-info {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.7vh;
+  min-width: 0;
+}
+
+.health-injury-top {
   display: flex;
   align-items: center;
   gap: 1vh;
-  padding: 1vh 1.2vh;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 1.3vh;
-}
-
-.health-injury-dot {
-  width: 1vh;
-  height: 1vh;
-  border-radius: 50%;
-  flex-shrink: 0;
-  box-shadow: 0 0 6px currentColor;
-}
-
-.health-injury-label {
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  font-size: 1.1vh;
+  font-weight: 700;
+  letter-spacing: 1px;
   text-transform: uppercase;
 }
 
 .health-injury-part {
-  margin-left: auto;
-  font-size: 1.15vh;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.health-injury-severity {
+  color: var(--sev);
+}
+
+.health-injury-bleeding {
+  display: flex;
+  align-items: center;
+  gap: 0.4vh;
+  color: var(--sev);
+
+  i {
+    font-size: 1.1vh;
+  }
+}
+
+.health-injury-name {
+  font-size: 1.7vh;
+  font-weight: 700;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
+  color: #fff;
+}
+
+.health-injury-heal {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 0.6vh;
+}
+
+.health-injury-heal-label {
+  font-size: 1.05vh;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.health-injury-heal-btn {
+  width: 4.6vh;
+  height: 4.6vh;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background-color: rgba(0, 0, 0, 0.35);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 78%;
+  cursor: pointer;
+  transition: 120ms ease;
+
+  &:hover {
+    border-color: var(--sev);
+    background-color: rgba(0, 0, 0, 0.5);
+  }
 }
