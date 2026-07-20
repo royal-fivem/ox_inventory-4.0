@@ -5,8 +5,10 @@ import useNuiEvent from '../../hooks/useNuiEvent';
 import { HealthData } from './types';
 import { MOCK_HEALTH } from './mock';
 
+const EMPTY_HEALTH: HealthData = { health: 100, armor: 0, stamina: 0, injuries: [] };
+
 export const useHealthData = (active: boolean): HealthData => {
-  const [data, setData] = useState<HealthData>(MOCK_HEALTH);
+  const [data, setData] = useState<HealthData>(isEnvBrowser() ? MOCK_HEALTH : EMPTY_HEALTH);
 
   useEffect(() => {
     if (!active) return;

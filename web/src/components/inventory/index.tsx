@@ -35,8 +35,7 @@ const Inventory: React.FC = () => {
   const dispatch = useAppDispatch();
   const rightInventory = useAppSelector(selectRightInventory);
   const isShop = rightInventory?.type === 'shop';
-  const isHealthActive = inventoryVisible && activeIndex === HEALTH_INDEX;
-  const healthData = useHealthData(isHealthActive);
+  const healthData = useHealthData(inventoryVisible);
   const [hasExperience, setHasExperience] = useState(false);
 
   useEffect(() => {
