@@ -10,10 +10,9 @@ import { Injury } from '../health/types';
 
 const PHONE_SLOT = 8;
 
-// dev-only mock SIM cards so the phone boxes/container are testable in a browser
+// dev-only mock SIM card so the phone box/container is testable in a browser
 const MOCK_SIMS = [
     { slot: 1, name: 'simcard', label: 'Sim Card', weight: 5, count: 1, rarity: 'uncommon' },
-    { slot: 2, name: 'simcard', label: 'Sim Card', weight: 5, count: 1, rarity: 'uncommon' },
 ];
 
 type SlotConfig = {
@@ -54,13 +53,9 @@ const InventoryUtils: React.FC<InventoryUtilsProps> = ({ figureOnly = false, inj
     const [phoneItems, setPhoneItems] = useState<any[]>(isEnvBrowser() ? MOCK_SIMS : []);
     const dispatch = useAppDispatch();
 
-    // the phone's container is "open" when it's the current container inventory
     const phoneOpen = containerInventory?.label === 'Phone';
-    // preview items: live from the open container, otherwise the fetched contents
     const simItems: any[] = phoneOpen ? containerInventory!.items : phoneItems;
 
-    // fetch the phone container contents so the side boxes show SIM cards even
-    // when the container itself is closed
     const loadPhoneContents = () => {
         if (isEnvBrowser()) return;
         fetchNui<any[]>('getPhoneContents')
@@ -72,16 +67,32 @@ const InventoryUtils: React.FC<InventoryUtilsProps> = ({ figureOnly = false, inj
 
     useEffect(() => {
         loadPhoneContents();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // refresh the preview whenever a container closes (e.g. after editing SIMs)
     useEffect(() => {
         if (!containerInventory) loadPhoneContents();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [containerInventory]);
 
-    // clicking a SIM box toggles the phone container open/closed
+    const phoneSlotItem = items.find((i) => i.slot === PHONE_SLOT);
+    const phoneContainerId =
+        phoneSlotItem && isSlotWithItem(phoneSlotItem) ? phoneSlotItem.metadata?.container : undefined;
+
+    useEffect(() => {
+        if (isEnvBrowser()) return;
+        if (!phoneContainerId) {
+            setPhoneItems([]);
+            return;
+        }
+        loadPhoneContents();
+    }, [phoneContainerId]);
+
+    useEffect(() => {
+        if (isEnvBrowser()) return;
+        if (phoneOpen && !phoneContainerId) {
+            fetchNui('closePhone').catch(() => {});
+        }
+    }, [phoneOpen, phoneContainerId]);
+
     const togglePhoneContainer = () => {
         if (isEnvBrowser()) {
             if (phoneOpen) {
@@ -92,7 +103,7 @@ const InventoryUtils: React.FC<InventoryUtilsProps> = ({ figureOnly = false, inj
                         rightInventory: {
                             id: 'phone-mock',
                             type: 'container',
-                            slots: 11,
+                            slots: 1,
                             label: 'Phone',
                             maxWeight: 2000,
                             items: MOCK_SIMS as any,
@@ -155,7 +166,7 @@ const InventoryUtils: React.FC<InventoryUtilsProps> = ({ figureOnly = false, inj
 
                     {isPhone && (
                         <div className="phone-sim-slots">
-                            {[0, 1].map((i) => {
+                            {[0].map((i) => {
                                 const sim = simItems?.[i];
                                 const hasSim = sim && isSlotWithItem(sim);
                                 return (
