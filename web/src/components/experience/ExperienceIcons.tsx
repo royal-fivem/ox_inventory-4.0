@@ -1,16 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
-// All experience icons use the shared placeholder image shipped with the
-// c-experience resource. Referenced cross-resource via the nui:// scheme.
-const PLACEHOLDER = 'nui://c-experience/images/placeholder.png';
+const PLACEHOLDER = 'nui://royal-experience/images/placeholder.png';
 
 interface Props {
   name?: string;
   className?: string;
 }
 
-const ExperienceIcon: React.FC<Props> = ({ className }) => (
-  <img className={className} src={PLACEHOLDER} alt="" draggable={false} />
-);
+const ExperienceIcon: React.FC<Props> = ({ className, name }) => {
+  const initialSrc = name 
+    ? `nui://royal-experience/images/${name}.png` 
+    : PLACEHOLDER;
+
+  const [imgSrc, setImgSrc] = useState<string>(initialSrc);
+
+  useEffect(() => {
+    setImgSrc(
+      name ? `nui://royal-experience/images/${name}.png` : PLACEHOLDER
+    );
+  }, [name]);
+
+  const handleError = () => {
+    if (imgSrc !== PLACEHOLDER) {
+      setImgSrc(PLACEHOLDER);
+    }
+  };
+
+  return (
+    <img
+      className={className}
+      src={imgSrc}
+      onError={handleError}
+      draggable={false}
+    />
+  );
+};
 
 export default ExperienceIcon;
