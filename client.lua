@@ -2344,6 +2344,7 @@ RegisterNUICallback('getHealthData', function(_, cb)
     local health = GetEntityHealth(ped)
     local maxHealth = GetEntityMaxHealth(ped)
     local healthPct = 0
+    local injuries = {}
 
     if maxHealth > 100 then
         healthPct = math.floor(((health - 100) / (maxHealth - 100)) * 100 + 0.5)
@@ -2351,11 +2352,16 @@ RegisterNUICallback('getHealthData', function(_, cb)
 
     if healthPct < 0 then healthPct = 0 elseif healthPct > 100 then healthPct = 100 end
 
+    if GetResourceState('royal-health') == 'started' then
+        local getInjuries = exports['royal-health']:GetInjuries()
+        injuries = getInjuries
+    end
+
     cb({
         health = healthPct,
         armor = GetPedArmour(ped),
         stamina = 0,
-        injuries = {},
+        injuries = injuries,
     })
 end)
 
