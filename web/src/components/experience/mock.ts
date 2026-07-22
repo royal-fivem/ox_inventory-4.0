@@ -4,10 +4,12 @@ import { Experience } from './types';
 export const MOCK_EXPERIENCE: Experience[] = [
   {
     id: 'agriculture', label: 'Agriculture', icon: 'agriculture',
-    level: 1, xp: 251, nextXp: 400, daily: 0, dailyCap: 1000, maxLevel: 30,
+    level: 3, xp: 630, nextXp: 400, daily: 456, dailyCap: 1000, maxLevel: 30,
     unlocks: [
-      { level: 1, title: 'Field Hand' }, { level: 3, title: 'Harvester', reward: 400 },
-      { level: 6, title: 'Herdsman', reward: 600 }, { level: 9, title: 'Cultivator', reward: 800 },
+      { level: 1, title: 'Field Hand', bonus: 'test test test test', reward: 1500, items: [{ name: 'phone', count: 5 }] },
+      { level: 3, title: 'Harvester', reward: 400, items: [{ name: 'bandage', count: 2 }] },
+      { level: 6, title: 'Herdsman', reward: 600 },
+      { level: 9, title: 'Cultivator', items: [{ name: 'scrapmetal', count: 25 }, { name: 'cloth', count: 10 }] },
     ],
     subExperiences: [],
   },
@@ -26,8 +28,10 @@ export const MOCK_EXPERIENCE: Experience[] = [
     id: 'outlaw', label: 'Outlaw', icon: 'outlaw',
     level: 0, xp: 181, nextXp: 250, daily: 0, dailyCap: 1000, maxLevel: 30,
     unlocks: [
-      { level: 1, title: 'Petty Crook' }, { level: 3, title: 'Burglar', reward: 400 },
-      { level: 6, title: 'Robber', reward: 600 }, { level: 9, title: 'Kingpin', reward: 800 },
+      { level: 1, title: 'Petty Crook', items: [{ name: 'lockpick', count: 3 }] },
+      { level: 3, title: 'Burglar', reward: 400, items: [{ name: 'lockpick', count: 5 }] },
+      { level: 6, title: 'Robber', reward: 600, items: [{ name: 'goldchain' }] },
+      { level: 9, title: 'Kingpin', reward: 800, items: [{ name: 'goldchain', count: 2 }] },
     ],
     subExperiences: [],
   },

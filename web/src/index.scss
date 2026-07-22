@@ -2240,6 +2240,7 @@ $xpGreenDim: rgba(162, 202, 49, 0.55);
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.8);
+  margin-top: -0.6vh;
 }
 
 .xp-detail-stats {
@@ -2389,13 +2390,15 @@ $xpGreenDim: rgba(162, 202, 49, 0.55);
 .xp-unlock-row {
   position: relative;
   display: flex;
-  align-items: flex-start;
+  align-items: center; // marker, level, title and item reward all line up vertically
   gap: 1.6vh;
   padding: 0.75vh 0;
   padding-left: 2.4vh;
 }
 
-// vertical connector segment (per row) — lit green while the level is reached
+// vertical connector segment (per row) — lit green while the level is reached.
+// runs the full row height for middle rows and stops at the marker centre on
+// the first/last rows so the timeline ends on the dots.
 .xp-unlock-row::before {
   content: '';
   position: absolute;
@@ -2406,16 +2409,16 @@ $xpGreenDim: rgba(162, 202, 49, 0.55);
   transform: translateX(-50%);
   background: rgba(255, 255, 255, 0.13);
 }
-.xp-unlock-row:first-child::before { top: 1.1vh; }
-.xp-unlock-row:last-child::before { bottom: auto; height: 1.1vh; }
+.xp-unlock-row:first-child::before { top: 50%; }
+.xp-unlock-row:last-child::before { bottom: 50%; }
 
 .xp-unlock-marker {
   position: absolute;
   left: 0.5vh;
-  top: 0.55vh;
+  top: 50%;
   width: 1vh;
   height: 1vh;
-  transform: translateX(-50%) rotate(45deg);
+  transform: translate(-50%, -50%) rotate(45deg);
   background: #14150f;
   border: 1px solid rgba(255, 255, 255, 0.28);
   z-index: 1;
@@ -2465,6 +2468,58 @@ $xpGreenDim: rgba(162, 202, 49, 0.55);
   line-height: 1.6vh;
 }
 
+// cash + item rewards, right-aligned on the row
+.xp-unlock-rewards {
+  display: flex;
+  align-items: center;
+  gap: 0.9vh;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+// item reward — a small slot with the item icon and a count badge in the corner
+.xp-reward-item {
+  position: relative;
+  width: 4.2vh;
+  height: 4.2vh;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: grayscale(0.6) brightness(0.75); // dimmed until the level is reached
+  transition: 150ms ease;
+
+  img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+    pointer-events: none;
+  }
+}
+
+.xp-reward-count {
+  position: absolute;
+  right: -0.5vh;
+  bottom: -0.5vh;
+  min-width: 1.8vh;
+  height: 1.8vh;
+  padding: 0 0.35vh;
+  box-sizing: border-box;
+  border-radius: 3px;
+  background: #111;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 1.05vh;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
 .xp-unlock-row.reached {
   &::before {
     background: $xpGreen;
@@ -2481,6 +2536,14 @@ $xpGreenDim: rgba(162, 202, 49, 0.55);
   .xp-unlock-reward {
     color: $xpGreen;
     text-shadow: 0 0 8px rgba(162, 202, 49, 0.5);
+  }
+  .xp-reward-item {
+    filter: none;
+    border-color: rgba(162, 202, 49, 0.6);
+    box-shadow: inset 0 0 14px -8px $xpGreen;
+  }
+  .xp-reward-count {
+    border-color: rgba(162, 202, 49, 0.5);
   }
 }
 

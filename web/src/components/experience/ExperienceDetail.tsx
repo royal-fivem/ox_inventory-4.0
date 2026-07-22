@@ -1,6 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import ExperienceIcon from './ExperienceIcons';
+import { getItemUrl } from '../../helpers';
+import { isEnvBrowser } from '../../utils/misc';
 import { Experience, ExperienceTrack } from './types';
+
+// item images don't resolve in a browser (npm run dev), so use a hosted fallback
+const ITEM_PLACEHOLDER =
+  'https://static.vecteezy.com/system/resources/previews/056/434/838/non_2x/3d-white-question-mark-icon-png.png';
+
+const rewardItemSrc = (name: string) => (getItemUrl(name) || ITEM_PLACEHOLDER);
 
 interface Props {
   experience: Experience;
@@ -94,8 +102,32 @@ const ExperienceDetail: React.FC<Props> = ({ experience, onBack }) => {
                     <span className="xp-unlock-name">{unlock.title}</span>
                     {unlock.bonus && <span className="xp-unlock-bonus">{unlock.bonus}</span>}
                   </div>
-                  {unlock.reward !== undefined && (
-                    <span className="xp-unlock-reward">$ {unlock.reward.toLocaleString('en-us')}</span>
+                  {(unlock.reward !== undefined || (unlock.items && unlock.items.length > 0)) && (
+                    <div className="xp-unlock-rewards">
+                      {unlock.reward !== undefined && (
+                        <span className="xp-unlock-reward">$ {unlock.reward.toLocaleString('en-us')}</span>
+                      )}
+
+                      {unlock.items?.map((item, i) => {
+                        const count = item.count ?? 1;
+                        return (
+                          <div
+                            className="xp-reward-item"
+                            key={`${item.name}-${i}`}
+                            title={item.label ?? item.name}
+                          >
+                            <img
+                              src={rewardItemSrc(item.name)}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = ITEM_PLACEHOLDER;
+                              }}
+                              draggable={false}
+                            />
+                            {count > 1 && <span className="xp-reward-count">{count}</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
               );
