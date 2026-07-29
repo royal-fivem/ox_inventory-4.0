@@ -131,6 +131,15 @@ resources answer them.
       <br />
       <sub>ox_inventory &amp; ox_lib</sub>
     </td>
+    <td align="center">
+      <a href="https://github.com/trusttyh">
+        <img src="https://avatars.githubusercontent.com/u/101424789" width="100px;" alt="trusttyh"/>
+        <br />
+        <sub><b>trusttyh</b></sub>
+      </a>
+      <br />
+      <sub>old ox-inventory-redesign </sub>
+    </td>
   </tr>
 </table>
 
