@@ -1,5 +1,5 @@
 import { CaseReducer, PayloadAction } from '@reduxjs/toolkit';
-import { getTargetInventory, itemDurability } from '../helpers';
+import { adjustContainerWeight, getTargetInventory, itemDurability } from '../helpers';
 import { Inventory, InventoryType, Slot, SlotWithItem, State } from '../typings';
 
 export const moveSlotsReducer: CaseReducer<
@@ -26,6 +26,10 @@ export const moveSlotsReducer: CaseReducer<
     durability: itemDurability(fromItem.metadata, curTime),
     rarity: fromItem.rarity,
   };
+
+  const movedWeight = pieceWeight * count;
+  adjustContainerWeight(state, targetInventory, movedWeight);
+  adjustContainerWeight(state, sourceInventory, -movedWeight);
 
   if (fromType === InventoryType.SHOP || fromType === InventoryType.CRAFTING) return;
 
