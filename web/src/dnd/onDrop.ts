@@ -70,7 +70,7 @@ export const onDrop = async (
       return console.log(`Cannot store container ${sourceSlot.name} inside another container`);
 
     // Prevent dragging of container slot when opened
-    if (state.rightInventory.id === sourceSlot.metadata.container)
+    if (targetInventory.id === sourceSlot.metadata.container)
       return console.log(`Cannot move container ${sourceSlot.name} when opened`);
   }
 
@@ -104,8 +104,8 @@ export const onDrop = async (
     if (!canItemBePlacedInUtilitySlot(targetSlot.name, target.item.slot)) return;
   }
 
-  if (targetSlot.metadata?.container !== undefined && state.rightInventory.id === targetSlot.metadata.container)
-    return console.log(`Cannot swap item ${sourceSlot.name} with container ${targetSlot.name} when opened`);
+    if (targetSlot.metadata?.container !== undefined && sourceInventory.id === targetSlot.metadata.container)
+      return console.log(`Cannot swap item ${sourceSlot.name} with container ${targetSlot.name} when opened`);
 
   const count =
     countOverride && countOverride > 0
