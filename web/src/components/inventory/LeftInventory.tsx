@@ -1,5 +1,6 @@
 import InventoryGrid from './InventoryGrid';
 import { useAppSelector } from '../../store';
+import { Items } from '../../store/items';
 import { selectLeftInventory, selectBackpackInventory, selectRightInventory, selectCraftingInventory } from '../../store/inventory';
 import React, { useMemo, useState } from 'react';
 import { isSlotWithItem } from '../../helpers';
@@ -20,13 +21,21 @@ const LeftInventory: React.FC = () => {
 
   // Slots 1-12 are reserved utility slots (hotkeys + equipment), so the Pockets grid starts at 13.
   const displayItems = useMemo(() => leftInventory.items.filter(item => item.slot > 12), [leftInventory.items]);
-  const backpackEquipped = useMemo(() => {
-    const slotSix = leftInventory.items.find((item) => item.slot === 6);
-    return Boolean(slotSix && (isSlotWithItem(slotSix) || slotSix.name));
-  }, [leftInventory.items]);
+  
+  const backpackSlotItem = useMemo(
+    () => leftInventory.items.find((item) => item.slot === 6),
+    [leftInventory.items]
+  );
+  
+  const backpackEquipped = Boolean(backpackSlotItem && (isSlotWithItem(backpackSlotItem) || backpackSlotItem.name));
 
   const shouldShowBackpack = backpackEquipped && (backpackInventory?.slots ?? 0) > 0;
   const shouldShowCraftingInventory = rightInventory?.type === 'crafting' && craftingInventory && (craftingInventory?.slots ?? 0) > 0;
+
+  const backpackPanel = useMemo(() => {
+    const label = backpackSlotItem?.metadata?.label ?? (backpackSlotItem?.name ? Items[backpackSlotItem.name]?.label : undefined);
+    return label ? { ...backpackInventory, label } : backpackInventory;
+  }, [backpackInventory, backpackSlotItem])
 
   return (
     <div className="left-inventory">
@@ -42,7 +51,7 @@ const LeftInventory: React.FC = () => {
           {shouldShowBackpack && (
             <div style={{ marginTop: '1vh' }}>
               <InventoryGrid
-                inventory={backpackInventory}
+                inventory={backpackPanel}
                 hideHeader={false}
                 collapsible
                 defaultCollapsed
