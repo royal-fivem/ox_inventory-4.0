@@ -1,5 +1,5 @@
 import { CaseReducer, PayloadAction } from '@reduxjs/toolkit';
-import { getTargetInventory } from '../helpers';
+import { adjustContainerWeight, getTargetInventory } from '../helpers';
 import { Inventory, InventoryType, SlotWithItem, State } from '../typings';
 
 export const stackSlotsReducer: CaseReducer<
@@ -23,6 +23,10 @@ export const stackSlotsReducer: CaseReducer<
     count: toSlot.count + count,
     weight: pieceWeight * (toSlot.count + count),
   };
+
+  const movedWeight = pieceWeight * count;
+  adjustContainerWeight(state, targetInventory, movedWeight);
+  adjustContainerWeight(state, sourceInventory, -movedWeight);
 
   if (fromType === InventoryType.SHOP || fromType === InventoryType.CRAFTING) return;
 
