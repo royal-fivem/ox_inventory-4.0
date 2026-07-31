@@ -1,5 +1,5 @@
 import { CaseReducer, PayloadAction } from '@reduxjs/toolkit';
-import { getTargetInventory, itemDurability } from '../helpers';
+import { adjustContainerWeight, getTargetInventory, itemDurability } from '../helpers';
 import { Inventory, SlotWithItem, State } from '../typings';
 
 export const swapSlotsReducer: CaseReducer<
@@ -27,4 +27,8 @@ export const swapSlotsReducer: CaseReducer<
       durability: itemDurability(fromSlot.metadata, curTime),
     },
   ];
+
+  const delta = fromSlot.weight - toSlot.weight;
+  adjustContainerWeight(state, targetInventory, delta);
+  adjustContainerWeight(state, sourceInventory, -delta);
 };
