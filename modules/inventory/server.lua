@@ -1941,15 +1941,21 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
         end
 
         if fromData then
-            -- Allow containers in backpack inventories, but prevent regular container-in-container storage
+            if fromData.metadata.container == toInventory.id then return false end
+            if toData and toData.metadata.container == fromInventory.id then return false end
+
             if fromData.metadata.container and toInventory.type == 'container' and data.toType ~= 'backpack' then return false end
             if toData and toData.metadata.container and fromInventory.type == 'container' and data.fromType ~= 'backpack' then return false end
 
-            local container, containerItem = (not sameInventory and playerInventory.containerSlot) and
+            -- Fixes the weight of the container when moving items in/out of it, but only if the container is in the player's inventory.
+            local containerSlot = (data.fromType == 'backpack' or data.toType == 'backpack') and
+                shared.backpackSlot or playerInventory.containerSlot
+
+            local container, containerItem = (not sameInventory and containerSlot) and
                 (fromInventory.type == 'container' and fromInventory or toInventory)
 
             if container then
-                containerItem = playerInventory.items[playerInventory.containerSlot]
+                containerItem = playerInventory.items[containerSlot]
             end
 
             local hookPayload = {
