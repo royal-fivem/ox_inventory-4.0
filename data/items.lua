@@ -184,9 +184,36 @@ return {
 		weight = 1000,
 		stack = false,
 		rarity = 'uncommon',
+		armor = 50,
 		client = {
 			anim = { dict = 'clothingshirt', clip = 'try_shirt_positive_d' },
 			usetime = 3500
+		},
+		description = 'Giver dig ekstra beskyttelse mod skader fra skud, knivstik og slag.',
+	},
+	
+	['heavyarmor'] = {
+		label = 'Tung Rustning',
+		weight = 2000,
+		stack = false,
+		rarity = 'rare',
+		armor = 100,
+		client = {
+			anim = { dict = 'clothingshirt', clip = 'try_shirt_positive_d' },
+			usetime = 5000
+		},
+		description = 'Giver dig ekstra beskyttelse mod skader fra skud, knivstik og slag.',
+	},
+
+	['pdarmor'] = {
+		label = 'Politipanser',
+		weight = 1500,
+		stack = false,
+		rarity = 'rare',
+		armor = 100,
+		client = {
+			anim = { dict = 'clothingshirt', clip = 'try_shirt_positive_d' },
+			usetime = 4000
 		},
 		description = 'Giver dig ekstra beskyttelse mod skader fra skud, knivstik og slag.',
 	},
