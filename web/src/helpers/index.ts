@@ -212,6 +212,16 @@ export const itemDurability = (metadata: any, curTime: number) => {
 export const getTotalWeight = (items: Inventory['items']) =>
   items.reduce((totalWeight, slot) => (isSlotWithItem(slot) ? totalWeight + slot.weight : totalWeight), 0);
 
+export const adjustContainerWeight = (state: State, inventory: Inventory, delta: number) => {
+  if (!inventory.id || !delta) return;
+
+  const owner = state.leftInventory.items.find((item) => item.metadata?.container === inventory.id);
+
+  if (owner?.weight === undefined) return;
+
+  owner.weight += delta;
+};
+
 export const isContainer = (inventory: Inventory) => inventory.type === InventoryType.CONTAINER;
 
 export const getItemData = async (itemName: string) => {
