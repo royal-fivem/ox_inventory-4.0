@@ -1182,7 +1182,6 @@ local function updateInventory(data, weight)
         CreateThread(function()
             local backpack = lib.callback.await('ox_inventory:getBackpackInventory', false)
 
-            -- slot 6 changed again while we were waiting, so a newer refresh is already in place. 
             if PlayerData.inventory[shared.backpackSlot]?.metadata?.container ~= containerId then return end
 
             SendNUIMessage({
@@ -2096,7 +2095,7 @@ function CheckParachuteItem(remove)
     end
 end
 
-function useArmor(metadata)
+function useArmor(metadata, itemName)
     local armor
 
     if metadata.type then
@@ -2106,17 +2105,27 @@ function useArmor(metadata)
         armor = tonumber(metadata.value)
     end
 
-    if not armor then return print('Invalid armor value') end
-    if armor > 0 then
-        SetPedArmour(cache.ped, armor)
+    if not armor then
+        armor = tonumber(Items[itemName] and Items[itemName].armor)
     end
+
+    if not armor then return print(('no armor value for %s'):format(itemName)) end
+    if armor <= 0 then return end
+
+    if armor > 100 then SetPlayerMaxArmour(PlayerData.id, armor) end
+
+    SetPedArmour(cache.ped, armor)
 end
 
-function CheckArmorItem(remove, to)
+function CheckArmorItem(remove, to, toPlayer)
     if remove then
         Wait(500)
         local armor = GetPedArmour(cache.ped)
-        TriggerServerEvent('ox_inventory:updateArmor', armor, to)
+
+        if toPlayer then
+            TriggerServerEvent('ox_inventory:updateArmor', armor, to)
+        end
+
         Wait(100)
         SetPedArmour(cache.ped, 0)
         return
@@ -2131,12 +2140,16 @@ function CheckArmorItem(remove, to)
             for _, itemSlots in pairs(items) do
                 for _, v in pairs(itemSlots) do
                     if v.slot == 7 then
-                        return useArmor(v.metadata)
+                        return useArmor(v.metadata, v.name)
                     end
                 end
             end
         end
     end
+end
+
+local function isPlayerInventory(inventoryType)
+    return inventoryType == 'player' or inventoryType == 'utility'
 end
 
 local swapActive = false
@@ -2208,20 +2221,31 @@ RegisterNUICallback('swapItems', function(data, cb)
         end
     end
 
-    if data.toSlot == 7 then
-        CheckArmorItem(false, data.fromSlot)
+    if not success then
+        return
     end
 
-    if data.fromSlot == 7 then
-        CheckArmorItem(true, data.toSlot)
+    local fromPlayer = isPlayerInventory(data.fromType)
+    local toPlayer = isPlayerInventory(data.toType)
+
+    if toPlayer then
+        if data.toSlot == 7 then
+            CheckArmorItem(false, data.fromSlot, true)
+        end
+
+        if data.toSlot == 9 then
+            CheckParachuteItem(false)
+        end
     end
 
-    if data.toSlot == 9 then
-        CheckParachuteItem(false)
-    end
+    if fromPlayer then
+        if data.fromSlot == 7 then
+            CheckArmorItem(true, data.toSlot, true)
+        end
 
-    if data.fromSlot == 9 then
-        CheckParachuteItem(true)
+        if data.fromSlot == 9 then
+            CheckParachuteItem(true)
+        end
     end
 end)
 
