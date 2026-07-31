@@ -712,10 +712,18 @@ end)
 
 RegisterNetEvent('ox_inventory:updateArmor', function(value, slot)
     local src = source
+    value = tonumber(value)
+
+    if type(slot) ~= 'number' or not value or value < 0 or value > 200 then return end
+
     local armor = exports.ox_inventory:GetSlot(src, slot)
+
+    if not armor or not armor.metadata then return end
+
     armor.metadata.value = value
-    exports.ox_inventory:SetMetadata(source, armor.slot, armor.metadata)
+    exports.ox_inventory:SetMetadata(src, armor.slot, armor.metadata)
 end)
+
 
 local function conversionScript()
     shared.ready = false
