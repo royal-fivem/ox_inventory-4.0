@@ -1177,17 +1177,21 @@ local function updateInventory(data, weight)
 
     -- If backpack slot was updated and inventory is open, refresh backpack inventory
     if backpackSlotUpdated and plyState.invOpen then
+        local containerId = PlayerData.inventory[shared.backpackSlot]?.metadata?.container
+
         CreateThread(function()
-            Wait(50) -- Small delay to ensure PlayerData.inventory is fully updated
             local backpack = lib.callback.await('ox_inventory:getBackpackInventory', false)
+
+            -- slot 6 changed again while we were waiting, so a newer refresh is already in place. 
+            if PlayerData.inventory[shared.backpackSlot]?.metadata?.container ~= containerId then return end
+
             SendNUIMessage({
                 action = 'refreshBackpackInventory',
-                data = {
-                    backpackInventory = backpack
-                }
+                data = { backpackInventory = backpack or false }
             })
         end)
     end
+
 
     if weight ~= PlayerData.weight then client.setPlayerData('weight', weight) end
 
