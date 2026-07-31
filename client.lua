@@ -79,20 +79,6 @@ exports('setStashTarget', function(id, owner)
     StashTarget = id and { id = id, owner = owner }
 end)
 
-local function extractCraftingPayload(left)
-    if not left then
-        return nil, nil
-    end
-
-    local craftingInventory = rawget(left, 'craftingInventory')
-    local craftingInventoryEnabled = rawget(left, 'craftingInventoryEnabled')
-
-    left.craftingInventory = nil
-    left.craftingInventoryEnabled = nil
-
-    return craftingInventory, craftingInventoryEnabled
-end
-
 ---@type boolean | number
 local invBusy = true
 
@@ -1096,11 +1082,16 @@ end
 RegisterNetEvent('ox_inventory:closeInventory', client.closeInventory)
 exports('closeInventory', client.closeInventory)
 
+-- Set while CheckArmorItem is mid-removal, so the auto-strip in updateInventory doesn't
+-- zero the ped before the value has been read and saved back onto the item.
+local armorBusy = false
+
 -- There needs to be a better way to handle inventory updates. For now, this works.
 local function updateInventory(data, weight)
     local changes = {}
     local itemCount = {}
     local backpackSlotUpdated = false
+    local armorSlotUpdated = false
 
     for i = 1, #data do
         local v = data[i]
@@ -1135,6 +1126,10 @@ local function updateInventory(data, weight)
             -- Check if backpack slot was updated
             if shared.backpackSlot and item.slot == shared.backpackSlot then
                 backpackSlotUpdated = true
+            end
+
+            if item.slot == 7 then
+                armorSlotUpdated = true
             end
         else
             local inventoryId = v.inventory
@@ -1191,6 +1186,16 @@ local function updateInventory(data, weight)
         end)
     end
 
+    -- Armor lives on the ped, so any removal that skips the drag path (/clearinv,
+    -- RemoveItem, Confiscate, CreateDropFromPlayer) has to strip it here.
+    -- armorBusy means CheckArmorItem is mid-removal and will zero it after saving the value.
+    if armorSlotUpdated and not armorBusy then
+        local slotData = PlayerData.inventory[7]
+
+        if not slotData or not slotData.name then
+            SetPedArmour(cache.ped, 0)
+        end
+    end
 
     if weight ~= PlayerData.weight then client.setPlayerData('weight', weight) end
 
@@ -2128,6 +2133,7 @@ function CheckArmorItem(remove, to, toPlayer)
 
         Wait(100)
         SetPedArmour(cache.ped, 0)
+        armorBusy = false
         return
     else
         Wait(1000)
@@ -2200,6 +2206,13 @@ RegisterNUICallback('swapItems', function(data, cb)
         end
     end
 
+    -- Claim the slot before the round trip: the server's sync can reach updateInventory
+    -- before this callback resumes, and the auto-strip would zero the ped before
+    -- CheckArmorItem reads the value it needs to save.
+    if data.fromSlot == 7 and isPlayerInventory(data.fromType) then
+        armorBusy = true
+    end
+
     local success, response, weaponSlot = lib.callback.await('ox_inventory:swapItems', false, data)
     swapActive = false
 
@@ -2222,6 +2235,7 @@ RegisterNUICallback('swapItems', function(data, cb)
     end
 
     if not success then
+        armorBusy = false
         return
     end
 
