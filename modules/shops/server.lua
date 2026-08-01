@@ -242,7 +242,7 @@ local function canAffordItem(inv, currency, price)
         }
     end
 
-    if currency == 'cash' then
+    if currency == 'cash' or currency == 'money' then
         local count = Inventory.GetItemCount(inv, 'money')
         if count >= price then return true end
 
@@ -258,18 +258,25 @@ local function canAffordItem(inv, currency, price)
             type = 'error',
             description = locale('cannot_afford', math.groupdigits(price) .. ' Bank')
         }
-	end
+    end
+
+    return {
+        type = 'error',
+        description = locale('cannot_afford', 'invalid payment method')
+    }
 end
 
 local function removeCurrency(inv, currency, amount)
-    if currency == 'money' then
-        Inventory.RemoveItem(inv, 'money', amount)
+    if currency == 'cash' or currency == 'money' then
+        return Inventory.RemoveItem(inv, 'money', amount) or false
     elseif currency == 'bank' then
         local player = exports.qbx_core:GetPlayer(inv.id)
-        if player then
-            player.Functions.RemoveMoney('bank', amount, 'shop-purchase')
-        end
+        if not player then return false end
+
+        return player.Functions.RemoveMoney('bank', amount, 'shop-purchase') or false
     end
+
+    return false
 end
 
 local function isRequiredGrade(grade, rank)
@@ -295,7 +302,7 @@ lib.callback.register('ox_inventory:buyItem', function(source, data)
 
     local shop = shopId and Shops[shopType][shopId] or Shops[shopType]
 
-    local method = data.method or 'money'
+    local method = data.method or 'cash'
 
     local totalPrice = 0
     local purchaseList = {}
@@ -368,23 +375,28 @@ lib.callback.register('ox_inventory:buyItem', function(source, data)
         return false, false, canAfford
     end
 
+    local totalWeight = 0
+
     for _, purchase in ipairs(purchaseList) do
-        local newWeight = playerInv.weight + (purchase.fromItem.weight + (purchase.metadata?.weight or 0)) * purchase.count
-        if newWeight > playerInv.maxWeight then
-            return false, false, { type = 'error', description = locale('cannot_carry') }
-        end
+        totalWeight = totalWeight + (purchase.fromItem.weight + (purchase.metadata?.weight or 0)) * purchase.count
+    end
 
+    if playerInv.weight + totalWeight > playerInv.maxWeight then
+        return false, false, { type = 'error', description = locale('cannot_carry') }
+    end
+
+    if not removeCurrency(playerInv, method, totalPrice) then
+        return false, false, { type = 'error', description = locale('cannot_afford', math.groupdigits(totalPrice)) }
+    end
+
+    for _, purchase in ipairs(purchaseList) do
         Inventory.AddItem(playerInv, purchase.fromItem.name, purchase.count, purchase.metadata)
-
-        playerInv.weight = newWeight
 
         if purchase.fromData.count then
             purchase.fromData.count = purchase.fromData.count - purchase.count
         end
     end
-
-    removeCurrency(playerInv, method, totalPrice)
-
+    
     if server.syncInventory then server.syncInventory(playerInv) end
 
     if server.loglevel > 0 then
