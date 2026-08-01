@@ -1,7 +1,29 @@
 import { store } from '../../store';
 import { Items } from '../../store/items';
-import { isSlotWithItem } from '../../helpers';
+import { getTotalWeight, isSlotWithItem } from '../../helpers';
 import { CraftRecipe, GridCell } from './types';
+
+
+/**
+ * Whether the crafted result would fit. Mirrors the server's CanCarryItem closely
+ * enough to fail fast on click instead of after the craft timer. Advisory only —
+ * the server still enforces this at commit time.
+ */
+export const canCarryResult = (recipe: CraftRecipe): boolean => {
+  const inv = store.getState().inventory.leftInventory;
+  if (!inv?.maxWeight) return true;
+
+  const result = Items[recipe.result];
+  if (!result) return true;
+
+  const gained = (result.weight ?? 0) * (recipe.count ?? 1);
+  const freed = recipe.ingredients.reduce(
+    (sum, ing) => sum + (Items[ing.name]?.weight ?? 0) * ing.count,
+    0
+  );
+
+  return getTotalWeight(inv.items) - freed + gained <= inv.maxWeight;
+};
 
 /**
  * Total amount of an item the player currently owns across their pockets
