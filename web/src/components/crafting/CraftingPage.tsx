@@ -48,8 +48,19 @@ const CraftingPage: React.FC<Props> = ({ visible }) => {
   const [favorites, setFavorites] = useState<Set<string>>(loadFavorites);
   const [manualCells, setManualCells] = useState<(PlacedCell | null)[]>(EMPTY_CELLS);
   const [error, setError] = useState<string | null>(null);
+  const errorTimer = useRef<number>();
   const { jobs, enqueue, cancel } = useCraftingQueue();
   const dispatch = useAppDispatch();
+
+  const showError = useCallback((msg: string) => {
+    if (errorTimer.current) window.clearTimeout(errorTimer.current);
+    setError(msg);
+    errorTimer.current = window.setTimeout(() => setError(null), 2200);
+  }, []);
+
+  useEffect(() => () => {
+    if (errorTimer.current) window.clearTimeout(errorTimer.current);
+  }, []);
 
   const manualCellsRef = useRef(manualCells);
   useEffect(() => {
@@ -253,8 +264,7 @@ const CraftingPage: React.FC<Props> = ({ visible }) => {
       const matched = matchRecipe(config.recipes, items);
       if (matched) {
         if (!canCarryResult(matched)) {
-          setError('Cannot carry result');
-          window.setTimeout(() => setError(null), 2200);
+          showError('Cannot carry');
           return;
         }
         
@@ -278,8 +288,7 @@ const CraftingPage: React.FC<Props> = ({ visible }) => {
           } else {
             cells.forEach((c) => restoreCell(c)); // no match — hand items back
             clearBench();
-            setError('No Recipe');
-            window.setTimeout(() => setError(null), 2200);
+            showError('No Recipe');
           }
         })
         .catch(() => {
@@ -293,13 +302,12 @@ const CraftingPage: React.FC<Props> = ({ visible }) => {
     if (!selected || !isCraftable(selected)) return;
 
     if (!canCarryResult(selected)) {
-      setError('Cannot carry result');
-      window.setTimeout(() => setError(null), 2200);
+      showError('Cannot carry');
       return;
     }
 
     enqueue(selected);
-  }, [manualMode, selected, isCraftable, enqueue, restoreCell, restoreAll, config.recipes]);
+  }, [manualMode, selected, isCraftable, enqueue, restoreCell, restoreAll, showError, config.recipes]);
 
   const combineLabel = error
     ? error
