@@ -1,909 +1,409 @@
 if not lib then return end
 
-require 'modules.bridge.server'
-require 'modules.crafting.server'
-require 'modules.shops.server'
-require 'modules.pefcl.server'
-require 'modules.slotRestrictions.server'
-
-if GetConvar('inventory:versioncheck', 'true') == 'true' then
-    lib.versionCheck('communityox/ox_inventory')
-end
-
-local TriggerEventHooks = require 'modules.hooks.server'
-local db = require 'modules.mysql.server'
 local Items = require 'modules.items.server'
 local Inventory = require 'modules.inventory.server'
+local Shops = {}
+local locations = shared.target and 'targets' or 'locations'
 
-local function buildBackpackInventory(playerInventory)
-    local slotIndex = shared.backpackSlot
-    if not slotIndex or not playerInventory or not playerInventory.items then return end
+---@class OxShopItem
+---@field slot number
+---@field weight number
 
-    local slotData = playerInventory.items[slotIndex]
-    if not slotData or not slotData.metadata or not slotData.metadata.container then return end
-
-    local container = Inventory.GetContainerFromSlot(playerInventory, slotIndex)
-    if not container then return end
-
-    local itemData = Items(slotData.name)
-    local label = (slotData.metadata and slotData.metadata.label) or slotData.label or (itemData and itemData.label) or container.label
-
-    return {
-        id = container.id,
-        label = label,
-        type = 'backpack',
-        slots = container.slots,
-        weight = container.weight,
-        maxWeight = container.maxWeight,
-        items = container.items,
-        slot = slotIndex
-    }
+local function getLocationSpecificName(shop, coords, location)
+    if location and location.name then
+        return location.name
+    end
+    return shop.name
 end
 
-local function buildCraftingInventory(playerInventory)
-    local slotIndex = shared.craftingSlot
-    if not slotIndex or not playerInventory or not playerInventory.items then return end
+local function setupShopItems(id, shopType, shopName, groups)
+    local shop = id and Shops[shopType][id] or Shops[shopType] --[[@as OxShop]]
 
-    local slotData = playerInventory.items[slotIndex]
-    if not slotData or not slotData.metadata or not slotData.metadata.container then return end
+    for i = 1, shop.slots do
+        local slot = shop.items[i]
 
-    local container = Inventory.GetContainerFromSlot(playerInventory, slotIndex)
-    if not container then return end
-
-    local itemData = Items(slotData.name)
-    local label = (slotData.metadata and slotData.metadata.label) or slotData.label or (itemData and itemData.label) or
-        container.label
-
-    return {
-        id = container.id,
-        label = label,
-        type = 'inventory',
-        slots = 50,
-        weight = container.weight,
-        maxWeight = 25000,   -- override
-        items = container.items,
-        slot = slotIndex
-    }
-end
-
----@param player table
----@param data table?
---- player requires source, identifier, and name
---- optionally, it should contain jobs/groups, sex, and dateofbirth
-function server.setPlayerInventory(player, data)
-    while not shared.ready do Wait(0) end
-
-    if not data then
-        data = db.loadPlayer(player.identifier)
-    end
-
-    local inventory = {}
-    local totalWeight = 0
-
-    if type(data) == 'table' then
-        local ostime = os.time()
-
-        for _, v in pairs(data) do
-            if type(v) == 'number' or not v.count or not v.slot then
-                if server.convertInventory then
-                    inventory, totalWeight = server.convertInventory(player.source, data)
-                    break
-                else
-                    return error(('Inventory for player.%s (%s) contains invalid data. Ensure you have converted inventories to the correct format.')
-                        :format(player.source, GetPlayerName(player.source)))
-                end
-            else
-                local item = Items(v.name)
-
-                if item then
-                    v.metadata = Items.CheckMetadata(v.metadata or {}, item, v.name, ostime)
-                    local weight = Inventory.SlotWeight(item, v)
-                    totalWeight = totalWeight + weight
-
-                    inventory[v.slot] = {
-                        name = item.name,
-                        label = item.label,
-                        weight = weight,
-                        slot = v.slot,
-                        count = v
-                            .count,
-                        description = item.description,
-                        metadata = v.metadata,
-                        stack = item.stack,
-                        close = item.close,
-                        rarity = item.rarity
-                    }
-                end
-            end
-        end
-    end
-
-    player.source = tonumber(player.source)
-    local inv = Inventory.Create(player.source, player.name, 'player', shared.playerslots, totalWeight,
-        shared.playerweight, player.identifier, inventory)
-
-    if inv then
-        inv.player = server.setPlayerData(player)
-        inv.player.ped = GetPlayerPed(player.source)
-
-        if server.syncInventory then server.syncInventory(inv) end
-        TriggerClientEvent('ox_inventory:setPlayerInventory', player.source, Inventory.Drops, inventory, totalWeight,
-            inv.player)
-
-        local parachuteSlot = inventory[9]
-        if parachuteSlot and parachuteSlot.name then
-            TriggerClientEvent('ox_inventory:checkParachute', player.source, parachuteSlot)
+        if slot.grade and not groups then
+            print(('^1attempted to restrict slot %s (%s) to grade %s, but %s has no job restriction^0'):format(id,
+                slot.name, json.encode(slot.grade), shopName))
+            slot.grade = nil
         end
 
-        local armorSlot = inventory[7]
-        if armorSlot and armorSlot.name then
-            TriggerClientEvent('ox_inventory:checkArmor', player.source, armorSlot)
-        end
-    end
-end
+        local Item = Items(slot.name)
 
-exports('setPlayerInventory', server.setPlayerInventory)
-AddEventHandler('ox_inventory:setPlayerInventory', server.setPlayerInventory)
-
-exports('getUtilitySlotItem', function(source, slot)
-    if not source or not slot or slot < 1 or slot > 9 then
-        return nil
-    end
-
-    local inventory = Inventory(source)
-    if not inventory then
-        return nil
-    end
-
-    local item = inventory.items[slot]
-    if item and item.name then
-        return {
-            name = item.name,
-            count = item.count,
-            slot = item.slot,
-            weight = item.weight,
-            metadata = item.metadata,
-            durability = item.durability,
-            rarity = item.rarity or item.metadata?.rarity
-        }
-    end
-
-    return nil
-end)
-
-exports('getAllUtilitySlots', function(source)
-    if not source then
-        return {}
-    end
-
-    local inventory = Inventory(source)
-    if not inventory then
-        return {}
-    end
-
-    local utilitySlots = {}
-    for slot = 1, 12 do
-        local item = inventory.items[slot]
-        if item and item.name then
-            utilitySlots[slot] = {
-                name = item.name,
-                count = item.count,
-                slot = item.slot,
-                weight = item.weight,
-                metadata = item.metadata,
-                durability = item.durability,
-                rarity = item.rarity or item.metadata?.rarity
+        if Item then
+            ---@type OxShopItem
+            slot = {
+                name = Item.name,
+                slot = i,
+                weight = Item.weight,
+                count = slot.count,
+                price = (server.randomprices and (not slot.currency or slot.currency == 'money')) and
+                    (math.ceil(slot.price * (math.random(80, 120) / 100))) or slot.price or 0,
+                metadata = slot.metadata,
+                license = slot.license,
+                qualification = slot.qualification,
+                currency = slot.currency,
+                grade = slot.grade,
+                job = slot.job,
+				rarity = Item.rarity or (slot.metadata and slot.metadata.rarity),
+                category = slot.category,
             }
-        else
-            utilitySlots[slot] = nil
+
+            if slot.metadata then
+                slot.weight = Inventory.SlotWeight(Item, slot, true)
+            end
+
+            shop.items[i] = slot
         end
     end
+end
 
-    return utilitySlots
+---@param shopType string
+---@param properties OxShop
+local function registerShopType(shopType, properties)
+    local shopLocations = properties[locations] or properties.locations
+
+    if shopLocations then
+        Shops[shopType] = properties
+    else
+        Shops[shopType] = {
+            label = properties.name,
+            id = shopType,
+            groups = properties.groups or properties.jobs,
+            items = properties.inventory,
+            slots = #properties.inventory,
+            type = 'shop',
+            categories = properties.categories,
+        }
+
+        setupShopItems(nil, shopType, properties.name, properties.groups or properties.jobs)
+    end
+end
+
+---@param shopType string
+---@param id number
+local function createShop(shopType, id)
+    local shop = Shops[shopType]
+
+    if not shop then return end
+
+    local store = (shop[locations] or shop.locations)?[id]
+
+    if not store then return end
+
+    local groups = shop.groups or shop.jobs
+    local coords
+
+    if shared.target then
+        if store.length then
+            local z = store.loc.z + math.abs(store.minZ - store.maxZ) / 2
+            coords = vec3(store.loc.x, store.loc.y, z)
+        else
+            coords = store.coords or store.loc
+        end
+    else
+        coords = store.coords or store
+    end
+
+    local locationName = getLocationSpecificName(shop, coords, store)
+
+    shop[id] = {
+        label = locationName,
+        id = shopType .. ' ' .. id,
+        groups = groups,
+        workplace = shop.workplace,
+        reqDuty = shop.reqDuty,
+        items = table.clone(shop.inventory),
+        slots = #shop.inventory,
+        type = 'shop',
+        coords = coords,
+        distance = shared.target and shop.targets?[id]?.distance,
+        categories = shop.categories,
+    }
+
+    setupShopItems(id, shopType, locationName, groups)
+
+    return shop[id]
+end
+
+for shopType, shopDetails in pairs(lib.load('data.shops') or {}) do
+    registerShopType(shopType, shopDetails)
+end
+
+---@param shopType string
+---@param shopDetails OxShop
+exports('RegisterShop', function(shopType, shopDetails)
+    registerShopType(shopType, shopDetails)
 end)
 
-local registeredDumpsters = {}
-
----@param coords vector3
----@return string?
-local function getDumpsterFromCoords(coords)
-    local found
-
-    for i = 1, #registeredDumpsters do
-        local distance = #(coords - registeredDumpsters[i])
-
-        if distance < 0.1 then
-            found = i
-            break
-        end
-    end
-
-    return found
-end
-
----@param playerPed number
----@param stash OxInventory
----@return vector3?
-local function getClosestStashCoords(playerPed, stash)
-    local playerCoords = GetEntityCoords(playerPed)
-    local distance = stash.distance or 10
-    local coordinates = stash.coords
-
-    if not coordinates then return end
-
-    if type(coordinates) == 'table' then
-        for i = 1, #coordinates do
-            local coords = coordinates[i] --[[@as vector3]]
-
-            if #(coords - playerCoords) < distance then
-                return coords
-            end
-        end
-
-        return
-    end
-
-    return #(coordinates - playerCoords) < distance and coordinates or nil
-end
-
----@param source number
----@param invType string
----@param data? string|number|table
----@param ignoreSecurityChecks boolean?
----@return table | false | nil, table | false | nil, string?
-local function openInventory(source, invType, data, ignoreSecurityChecks)
-    if Inventory.Lock then return false end
-
-    local left = Inventory(source)
-    local right, closestCoords
+lib.callback.register('ox_inventory:openShop', function(source, data)
+    local left, shop = Inventory(source)
 
     if not left then return end
 
-    left:closeInventory(true)
-    Inventory.CloseAll(left, source)
-
-    if invType == 'player' and data == source then
-        data = nil
-    end
-
-    local playerPed = left.player.ped
-
     if data then
-        local isDataTable = type(data) == 'table'
+        shop = Shops[data.type]
 
-        if invType == 'stash' then
-            right = Inventory(data, left, ignoreSecurityChecks)
-            if right == false then return false end
-        elseif isDataTable then
-            if data.netid then
-                local entity = NetworkGetEntityFromNetworkId(data.netid)
+        if not shop then return end
 
-                if not entity then return end
+        if not shop.items then
+            shop = (data.id and shop[data.id] or createShop(data.type, data.id))
 
-                if not ignoreSecurityChecks then
-                    if #(GetEntityCoords(playerPed) - GetEntityCoords(entity)) > 16 then return end
-                end
-
-                if invType == 'glovebox' then
-                    if not ignoreSecurityChecks and GetVehiclePedIsIn(playerPed, false) ~= entity then
-                        return
-                    end
-                end
-
-                if invType == 'trunk' then
-                    local lockStatus = ignoreSecurityChecks and 0 or GetVehicleDoorLockStatus(entity)
-
-                    -- 0: no lock; 1: unlocked; 8: boot unlocked
-                    if lockStatus > 1 and lockStatus ~= 8 then
-                        return false, false, 'vehicle_locked'
-                    end
-                end
-
-                local plate = (invType == 'glovebox' or invType == 'trunk') and Entity(entity).state.VIN
-
-                if plate then
-                    if server.trimplate then plate = string.strtrim(plate) end
-
-                    if not data.id then
-                        data.id = (invType == 'glovebox' and 'glove' or 'trunk') .. plate
-                    end
-                end
-
-                data.type = invType
-                right = Inventory(data)
-
-                if right and data.netid ~= right.netid then
-                    local invEntity = NetworkGetEntityFromNetworkId(right.netid)
-
-                    if not (invEntity > 0 and DoesEntityExist(invEntity)) or (plate and not string.match(Entity(invEntity).state.VIN or '', plate)) then
-                        Inventory.Remove(right)
-                        right = Inventory(data)
-                    end
-                end
-            elseif invType == 'drop' then
-                right = Inventory(data.id)
-            else
-                return
-            end
-        elseif invType == 'policeevidence' then
-            if ignoreSecurityChecks or server.hasGroup(left, shared.police) then
-                right = Inventory(('evidence-%s'):format(data))
-            end
-        elseif invType == 'dumpster' then
-            if shared.networkdumpsters then
-                local dumpsterId = getDumpsterFromCoords(data)
-                right = dumpsterId and Inventory(('dumpster-%s'):format(dumpsterId))
-
-                if not right then
-                    dumpsterId = #registeredDumpsters + 1
-                    right = Inventory.Create(('dumpster-%s'):format(dumpsterId), locale('dumpster'), invType, 15, 0,
-                        100000, false)
-                    registeredDumpsters[dumpsterId] = data
-                end
-            else
-                ---@cast data string
-                right = Inventory(data)
-
-                if not right then
-                    local netid = tonumber(data:sub(9))
-
-                    if netid and NetworkGetEntityFromNetworkId(netid) > 0 then
-                        right = Inventory.Create(data, locale('dumpster'), invType, 15, 0, 100000, false)
-                    end
-                end
-            end
-        elseif invType == 'container' then
-            left.containerSlot = data --[[@as number]]
-            data = left.items[data]
-
-            if data then
-                right = Inventory(data.metadata.container)
-
-                if not right then
-                    right = Inventory.Create(data.metadata.container, data.label, invType, data.metadata.size[1], 0,
-                        data.metadata.size[2], false)
-                end
-            else
-                left.containerSlot = nil
-            end
-        else
-            right = Inventory(data)
+            if not shop then return end
         end
 
-        if not right then return end
+        ---@cast shop OxShop
 
-        if right.type ~= invType and not (right.type == 'temp' and invType == 'stash') then
-            DropPlayer(source, 'sussy')
+        if shop.groups then
+            local group = server.hasGroup(left, shop.groups)
+            if not group then return end
+        end
+
+        if shop.workplace then
+            local workplace = server.hasWorkplace(left, shop.workplace)
+            if not workplace then return end
+        end
+
+        if shop.reqDuty then
+            local group = server.hasGroup(left, shop.groups)
+            if group then
+                local onDuty = server.isOnDuty(source, group)
+                if not onDuty then return end
+            end
+        end
+
+        if type(shop.coords) == 'vector3' and #(GetEntityCoords(GetPlayerPed(source)) - shop.coords) > 10 then
             return
         end
 
-        if not ignoreSecurityChecks and right.groups and not server.hasGroup(left, right.groups) then return end
-
-        local hookPayload = {
-            source = source,
-            inventoryId = right.id,
-            inventoryType = right.type,
-        }
-
-        if invType == 'container' then hookPayload.slot = left.containerSlot end
-        if isDataTable and data.netid then hookPayload.netId = data.netid end
-
-        if not TriggerEventHooks('openInventory', hookPayload) then return end
-
-        if left == right then return end
-
-        if right.player then
-            if right.open then return end
-
-            right.coords = not ignoreSecurityChecks and GetEntityCoords(right.player.ped) or nil
+        local playerJobs = {}
+        local playerInv = Inventory(source)
+        if playerInv and playerInv.player and playerInv.player.groups then
+            for jobName, _ in pairs(playerInv.player.groups) do
+                playerJobs[jobName] = true
+            end
         end
 
-        if not ignoreSecurityChecks and right.coords then
-            closestCoords = getClosestStashCoords(playerPed, right)
+        local filteredShop = table.clone(shop)
+        local filteredItems = {}
 
-            if not closestCoords then return end
+        for i = 1, #shop.items do
+            local item = shop.items[i]
+            if item and (not item.job or playerJobs[item.job]) then
+                filteredItems[#filteredItems + 1] = item
+            end
         end
 
-        left:openInventory(right)
-    else
+        filteredShop.items = filteredItems
+        filteredShop.slots = #filteredItems
+
+        ---@diagnostic disable-next-line: assign-type-mismatch
         left:openInventory(left)
+        left.currentShop = shop.id
+
+        return {
+                label = left.label,
+                type = left.type,
+                slots = left.slots,
+                weight = left.weight,
+                maxWeight = left.maxWeight
+            },
+            filteredShop
     end
 
-    local leftPayload = {
-        id = left.id,
-        label = left.label,
-        type = left.type,
-        slots = left.slots,
-        weight = left.weight,
-        maxWeight = left.maxWeight,
-        backpackInventory = buildBackpackInventory(left),
-        craftingInventory = buildCraftingInventory(left),
-    }
+    return { label = left.label, type = left.type, slots = left.slots, weight = left.weight, maxWeight = left.maxWeight },
+        shop
+end)
 
-    return leftPayload, right and {
-        id = right.id,
-        label = right.player and '' or right.label,
-        type = right.player and 'otherplayer' or right.type,
-        slots = right.slots,
-        weight = right.weight,
-        maxWeight = right.maxWeight,
-        items = right.items,
-        coords = closestCoords or right.coords,
-        distance = right.distance
+-- local function canAffordItem(inv, currency, price)
+--     if price < 0 then
+--         return { type = 'error', description = locale('cannot_afford', 'invalid price')
+--         }
+--     end
+
+--     if currency == 'cash' then
+--         local count = Inventory.GetItemCount(inv, 'money')
+
+--         local canAfford = count >= price
+
+--         return canAfford or { TriggerClientEvent('ox_lib:notify', inv.id, { type = 'error', description = locale('cannot_afford', locale('$') .. math.groupdigits(price)) }) }
+--     elseif currency == 'bank' then
+--         local canAfford = server.hasBalance(inv.id, price)
+
+--         return canAfford or { TriggerClientEvent('ox_lib:notify', inv.id, { type = 'error', description = locale('cannot_afford', math.groupdigits(price) .. ' Bank') }) }
+-- 	end
+-- end
+
+local function canAffordItem(inv, currency, price)
+    if price < 0 then
+        return {
+            type = 'error',
+            description = locale('cannot_afford', 'invalid price')
+        }
+    end
+
+    if currency == 'cash' or currency == 'money' then
+        local count = Inventory.GetItemCount(inv, 'money')
+        if count >= price then return true end
+
+        return {
+            type = 'error',
+            description = locale('cannot_afford', locale('$') .. math.groupdigits(price))
+        }
+    elseif currency == 'bank' then
+        local player = exports.qbx_core:GetPlayer(inv.id)
+        if player and player.PlayerData.money.bank >= price then return true end
+
+        return {
+            type = 'error',
+            description = locale('cannot_afford', math.groupdigits(price) .. ' Bank')
+        }
+    end
+
+    return {
+        type = 'error',
+        description = locale('cannot_afford', 'invalid payment method')
     }
 end
 
-lib.callback.register('ox_inventory:openInventory', function(source, invType, data)
-    if invType == 'player' and source ~= data then
-        local serverId = type(data) == 'table' and data.id or data
+local function removeCurrency(inv, currency, amount)
+    if currency == 'cash' or currency == 'money' then
+        return Inventory.RemoveItem(inv, 'money', amount) or false
+    elseif currency == 'bank' then
+        local player = exports.qbx_core:GetPlayer(inv.id)
+        if not player then return false end
 
-        if source == serverId or type(serverId) ~= 'number' then return end
-
-        local left = Inventory(source)
-        if not left then return end
-
-        local isPolice = server.hasGroup(left, shared.police)
-        local isTargetStealable = Player(serverId).state.canSteal
-
-        if not isPolice and not isTargetStealable then return end
+        return player.Functions.RemoveMoney('bank', amount, 'shop-purchase') or false
     end
 
-    return openInventory(source, invType, data)
-end)
+    return false
+end
 
-lib.callback.register('ox_inventory:isVehicleATrailer', function(source, netId)
-    local entity = NetworkGetEntityFromNetworkId(netId)
-    local retval = GetVehicleType(entity)
-    return retval == 'trailer'
-end)
-
-function server.forceOpenInventory(playerId, invType, data)
-    local left, right = openInventory(playerId, invType, data, true)
-
-    if left and right then
-        TriggerClientEvent('ox_inventory:forceOpenInventory', playerId, left, right)
-        return right.id
+local function isRequiredGrade(grade, rank)
+    if type(grade) == "table" then
+        for i = 1, #grade do
+            if grade[i] == rank then
+                return true
+            end
+        end
+        return false
+    else
+        return rank >= grade
     end
 end
 
-exports('forceOpenInventory', server.forceOpenInventory)
+lib.callback.register('ox_inventory:buyItem', function(source, data)
+    local playerInv = Inventory(source)
+    if not playerInv or not playerInv.currentShop then return end
 
-lib.callback.register('ox_inventory:getBackpackInventory', function(source)
-    local playerInventory = Inventory(source)
-    if not playerInventory then return end
+    local shopType, shopId = playerInv.currentShop:match('^(.-) (%d-)$')
+    if not shopType then shopType = playerInv.currentShop end
+    if shopId then shopId = tonumber(shopId) end
 
-    local data = buildBackpackInventory(playerInventory)
-    return data
-end)
+    local shop = shopId and Shops[shopType][shopId] or Shops[shopType]
 
-local Licenses = lib.load('data.licenses')
+    local method = data.method or 'cash'
 
-lib.callback.register('ox_inventory:buyLicense', function(source, id)
-    local license = Licenses[id]
-    if not license then return end
+    local totalPrice = 0
+    local purchaseList = {}
 
-    local inventory = Inventory(source)
-    if not inventory then return end
-
-    return server.buyLicense(inventory, license)
-end)
-
-lib.callback.register('ox_inventory:getItemCount', function(source, item, metadata, target)
-    local inventory = target and Inventory(target) or Inventory(source)
-    return (inventory and Inventory.GetItemCount(inventory, item, metadata, true))
-end)
-
-lib.callback.register('ox_inventory:getInventory', function(source, id)
-    local inventory = Inventory(id or source)
-    return inventory and {
-        id = inventory.id,
-        label = inventory.label,
-        type = inventory.type,
-        slots = inventory.slots,
-        weight = inventory.weight,
-        maxWeight = inventory.maxWeight,
-        owned = inventory.owner and true or false,
-        items = inventory.items
-    }
-end)
-
-RegisterNetEvent('ox_inventory:usedItemInternal', function(slot)
-    local inventory = Inventory(source)
-
-    if not inventory then return end
-
-    local item = inventory.usingItem
-
-    if not item or item.slot ~= slot then
-        ---@todo
-        DropPlayer(inventory.id, 'sussy')
-
-        return
-    end
-
-    TriggerEvent('ox_inventory:usedItem', inventory.id, item.name, item.slot, next(item.metadata) and item.metadata)
-
-    inventory.usingItem = nil
-end)
-
----@param source number
----@param itemName string
----@param slot number?
----@param metadata { [string]: any }?
----@return table | boolean | nil
-lib.callback.register('ox_inventory:useItem', function(source, itemName, slot, metadata, noAnim)
-    local inventory = Inventory(source)
-
-    if inventory and inventory.player then
-        local item = Items(itemName)
-        local data = item and
-            (slot and inventory.items[slot] or Inventory.GetSlotWithItem(inventory, item.name, metadata, true))
-
-        if not data then return end
-
-        slot = data.slot
-        local durability = data.metadata.durability --[[@as number|boolean|nil]]
-        local consume = item.consume
-        local label = data.metadata.label or item.label
-
-        if durability and consume then
-            if durability > 100 then
-                local ostime = os.time()
-
-                if ostime > durability then
-                    Items.UpdateDurability(inventory, data, item, 0)
-                    return TriggerClientEvent('ox_lib:notify', source,
-                        { type = 'error', description = locale('no_durability', label) })
-                elseif consume ~= 0 and consume < 1 then
-                    local degrade = (data.metadata.degrade or item.degrade) * 60
-                    local percentage = ((durability - ostime) * 100) / degrade
-
-                    if percentage < consume * 100 then
-                        return TriggerClientEvent('ox_lib:notify', source,
-                            { type = 'error', description = locale('not_enough_durability', label) })
-                    end
-                end
-            elseif durability <= 0 then
-                return TriggerClientEvent('ox_lib:notify', source,
-                    { type = 'error', description = locale('no_durability', label) })
-            elseif consume ~= 0 and consume < 1 and durability < consume * 100 then
-                return TriggerClientEvent('ox_lib:notify', source,
-                    { type = 'error', description = locale('not_enough_durability', label) })
-            end
-
-            if data.count > 1 and consume < 1 and consume > 0 and not Inventory.GetEmptySlot(inventory) then
-                return TriggerClientEvent('ox_lib:notify', source,
-                    { type = 'error', description = locale('cannot_use', label) })
+    for _, item in ipairs(data.items) do
+        local fromData = nil
+        for _, shopItem in pairs(shop.items) do
+            if shopItem.name == item.name then
+                fromData = shopItem
+                break
             end
         end
 
-        if item and data and data.count > 0 and data.name == item.name then
-            data = {
-                name = data.name,
-                label = label,
-                count = data.count,
-                slot = slot,
-                metadata = data.metadata,
-                weight =
-                    data.weight
-            }
-
-            if item.ammo then
-                if inventory.weapon then
-                    local weapon = inventory.items[inventory.weapon]
-
-                    if weapon and weapon.metadata and weapon.metadata.durability > 0 then
-                        consume = nil
-                    end
-                else
-                    return false
-                end
-            elseif item.component or item.tint then
-                consume = 1
-                data.component = true
-            elseif consume then
-                if data.count >= consume then
-                    local result = item.cb and item.cb('usingItem', item, inventory, slot)
-
-                    if result == false then return end
-
-                    if result ~= nil then
-                        data.server = result
-                    end
-                else
-                    return TriggerClientEvent('ox_lib:notify', source,
-                        { type = 'error', description = locale('item_not_enough', item.name) })
-                end
-            elseif not item.weapon and server.UseItem then
-                inventory.usingItem = data
-                -- This is used to call an external useItem function, i.e. ESX.UseItem
-                -- If an error is being thrown on item use there is no internal solution. We previously kept a list
-                -- of usable items which led to issues when restarting resources (for obvious reasons), but config
-                -- developers complained the inventory broke their items. Safely invoking registered item callbacks
-                -- should resolve issues, i.e. https://github.com/esx-framework/esx-legacy/commit/9fc382bbe0f5b96ff102dace73c424a53458c96e
-                return pcall(server.UseItem, source, data.name, data)
-            end
-
-            data.consume = consume
-
-            if not TriggerEventHooks('usingItem', {
-                    source = source,
-                    inventoryId = inventory and inventory.id,
-                    item = inventory.items[slot],
-                    consume = consume
-                }) then
-                return false
-            end
-
-            ---@type boolean
-            local success = lib.callback.await('ox_inventory:usingItem', source, data, noAnim)
-
-            if item.weapon then
-                inventory.weapon = success and slot or nil
-            end
-
-            if not success then return end
-
-            inventory.usingItem = data
-
-            if consume and consume ~= 0 and not data.component then
-                data = inventory.items[data.slot]
-
-                if not data then return end
-
-                durability = consume ~= 0 and consume < 1 and data.metadata.durability --[[@as number | false]]
-
-                if durability then
-                    if durability > 100 then
-                        local degrade = (data.metadata.degrade or item.degrade) * 60
-                        durability -= degrade * consume
-                    else
-                        durability -= consume * 100
-                    end
-
-                    if data.count > 1 then
-                        local emptySlot = Inventory.GetEmptySlot(inventory)
-
-                        if emptySlot then
-                            local newItem = Inventory.SetSlot(inventory, item, 1, table.deepclone(data.metadata),
-                                emptySlot)
-
-                            if newItem then
-                                Items.UpdateDurability(inventory, newItem, item, durability)
-                            end
-                        end
-
-                        durability = 0
-                    else
-                        Items.UpdateDurability(inventory, data, item, durability)
-                    end
-
-                    if durability <= 0 then
-                        durability = false
-                    end
-                end
-
-                if not durability then
-                    Inventory.RemoveItem(inventory.id, data.name, consume < 1 and 1 or consume, nil, data.slot)
-                else
-                    inventory.changed = true
-
-                    if server.syncInventory then server.syncInventory(inventory) end
-                end
-
-                if item.cb then
-                    item.cb('usedItem', item, inventory, data.slot)
-                end
-            end
-
-            if item.cb then
-                item.cb('usedItem', item, inventory, data.slot)
-            end
-
-            return true
-        end
-    end
-end)
-
-RegisterNetEvent('ox_inventory:removeParachute', function()
-    local src = source
-    exports.ox_inventory:RemoveItem(src, 'parachute', 1)
-end)
-
-RegisterNetEvent('ox_inventory:updateArmor', function(value, slot)
-    local src = source
-    value = tonumber(value)
-
-    if type(slot) ~= 'number' or not value or value < 0 or value > 200 then return end
-
-    local armor = exports.ox_inventory:GetSlot(src, slot)
-
-    if not armor or not armor.metadata then return end
-
-    armor.metadata.value = value
-    exports.ox_inventory:SetMetadata(src, armor.slot, armor.metadata)
-end)
-
-
-local function conversionScript()
-    shared.ready = false
-
-    local file = 'setup/convert.lua'
-    local import = LoadResourceFile(shared.resource, file)
-    local func = load(import, ('@@%s/%s'):format(shared.resource, file)) --[[@as function]]
-
-    conversionScript = func()
-end
-
-RegisterCommand('convertinventory', function(source, args)
-    if source ~= 0 then return warn('This command can only be executed with the server console.') end
-    if type(conversionScript) == 'function' then conversionScript() end
-    local arg = args[1]
-
-    local convert = arg and conversionScript[arg]
-
-    if not convert then
-        return warn('Invalid conversion argument. Valid options: esx, esxproperty')
-    end
-
-    CreateThread(convert)
-end, true)
-
-lib.addCommand({'additem', 'giveitem'}, {
-	help = 'Gives an item to a player with the given id',
-	params = {
-		{ name = 'target', type = 'playerId', help = 'The player to receive the item' },
-		{ name = 'item', type = 'string', help = 'The name of the item' },
-		{ name = 'count', type = 'number', help = 'The amount of the item to give', optional = true },
-		{ name = 'type', help = 'Sets the "type" metadata to the value', optional = true },
-	},
-	restricted = 'group.admin',
-}, function(source, args)
-	local item = Items(args.item)
-
-	if item then
-		local inventory = Inventory(args.target) --[[@as OxInventory]]
-		local count = args.count or 1
-		local success, response = Inventory.AddItem(inventory, item.name, count, args.type and { type = tonumber(args.type) or args.type })
-
-		if not success then
-			return Citizen.Trace(('Failed to give %sx %s to player %s (%s)'):format(count, item.name, args.target, response))
-		end
-
-		source = Inventory(source) or { label = 'console', owner = 'console' }
-
-		if server.loglevel > 0 then
-			lib.logger(source.owner, 'admin', ('"%s" gave %sx %s to "%s"'):format(source.label, count, item.name, inventory.label))
-		end
-	end
-end)
-
-lib.addCommand('removeitem', {
-	help = 'Removes an item to a player with the given id',
-	params = {
-		{ name = 'target', type = 'playerId', help = 'The player to remove the item from' },
-		{ name = 'item', type = 'string', help = 'The name of the item' },
-		{ name = 'count', type = 'number', help = 'The amount of the item to take' },
-		{ name = 'type', help = 'Only remove items with a matching metadata "type"', optional = true },
-	},
-	restricted = 'group.admin',
-}, function(source, args)
-	local item = Items(args.item)
-
-	if item and args.count > 0 then
-		local inventory = Inventory(args.target) --[[@as OxInventory]]
-		local success, response = Inventory.RemoveItem(inventory, item.name, args.count, args.type and { type = tonumber(args.type) or args.type }, nil, true)
-
-		if not success then
-			return Citizen.Trace(('Failed to remove %sx %s from player %s (%s)'):format(args.count, item.name, args.target, response))
-		end
-
-		source = Inventory(source) or {label = 'console', owner = 'console'}
-
-		if server.loglevel > 0 then
-			lib.logger(source.owner, 'admin', ('"%s" removed %sx %s from "%s"'):format(source.label, args.count, item.name, inventory.label))
-		end
-	end
-end)
-
-lib.addCommand('setitem', {
-    help = 'Sets the item count for a player, removing or adding as needed',
-    params = {
-        { name = 'target', type = 'playerId',                                     help = 'The player to set the items for' },
-        { name = 'item',   type = 'string',                                       help = 'The name of the item' },
-        { name = 'count',  type = 'number',                                       help = 'The amount of items to set',     optional = true },
-        { name = 'type',   help = 'Add or remove items with the metadata "type"', optional = true },
-    },
-    restricted = 'group.admin',
-}, function(source, args)
-    local item = Items(args.item)
-
-    if item then
-        local inventory = Inventory(args.target) --[[@as OxInventory]]
-        local count = args.count and math.max(args.count, 0) or 0
-
-        local success, response = Inventory.SetItem(inventory, item.name, count or 0,
-            args.type and { type = tonumber(args.type) or args.type })
-
-        if not success then
-            return Citizen.Trace(('Failed to set %s count to %sx for player %s (%s)'):format(item.name, count,
-                args.target, response))
+        if not fromData then
+            return false, false, { type = 'error', description = locale('item_notfound', item.name) }
         end
 
-        source = Inventory(source) or { label = 'console', owner = 'console' }
+        local fromItem = Items(fromData.name)
+        local quantity = item.quantity or 1
 
-        if server.loglevel > 0 then
-            lib.logger(source.owner, 'admin',
-                ('"%s" set "%s" %s count to %sx'):format(source.label, inventory.label, item.name, count))
+        if fromData.count and fromData.count < quantity then
+            return false, false, { type = 'error', description = locale('shop_nostock') }
+        end
+
+        if fromData.license and server.hasLicense and not server.hasLicense(playerInv, fromData.license) then
+            return false, false, { type = 'error', description = locale('item_unlicensed') }
+        end
+
+        if fromData.grade then
+            local _, rank = server.hasGroup(playerInv, shop.groups)
+            if not isRequiredGrade(fromData.grade, rank) then
+                return false, false, { type = 'error', description = locale('stash_lowgrade') }
+            end
+        end
+
+        local metadata, count = Items.Metadata(playerInv, fromItem, fromData.metadata and table.clone(fromData.metadata) or {}, quantity)
+        local price = count * (item.price or fromData.price)
+
+        totalPrice = totalPrice + price
+
+        -- Containers having Items.Metadata, it will always set their count to 1.
+        -- This code makes them purchasealbe in quantities greater than 1.
+        local container = Items.containers[fromItem.name]
+        if container and quantity > 1 then
+            for i = 1, quantity do
+                local containerMetadata = table.clone(fromData.metadata and table.clone(fromData.metadata) or {})
+                containerMetadata = Items.Metadata(playerInv, fromItem, containerMetadata, 1)
+                
+                table.insert(purchaseList, {
+                    fromData = fromData,
+                    fromItem = fromItem,
+                    metadata = containerMetadata,
+                    count = 1,
+                    price = item.price or fromData.price
+                })
+            end
+        else
+            table.insert(purchaseList, {
+                fromData = fromData,
+                fromItem = fromItem,
+                metadata = metadata,
+                count = count,
+                price = price
+            })
         end
     end
-end)
 
-lib.addCommand('clearevidence', {
-    help = 'Clears a police evidence locker with the given id',
-    params = {
-        { name = 'locker', type = 'number', help = 'The locker id to clear' },
-    },
-}, function(source, args)
-    if not server.isPlayerBoss then return end
-
-    local inventory = Inventory(source)
-    if not inventory then return end
-
-    local group, grade = server.hasGroup(inventory, shared.police)
-    local hasPermission = group and server.isPlayerBoss(source, group, grade)
-
-    if hasPermission then
-        MySQL.query('DELETE FROM ox_inventory WHERE name = ?', { ('evidence-%s'):format(args.locker) })
+    local canAfford = canAffordItem(playerInv, method, totalPrice)
+    if canAfford ~= true then
+        return false, false, canAfford
     end
+
+    local totalWeight = 0
+
+    for _, purchase in ipairs(purchaseList) do
+        totalWeight = totalWeight + (purchase.fromItem.weight + (purchase.metadata?.weight or 0)) * purchase.count
+    end
+
+    if playerInv.weight + totalWeight > playerInv.maxWeight then
+        return false, false, { type = 'error', description = locale('cannot_carry') }
+    end
+
+    if not removeCurrency(playerInv, method, totalPrice) then
+        return false, false, { type = 'error', description = locale('cannot_afford', math.groupdigits(totalPrice)) }
+    end
+
+    for _, purchase in ipairs(purchaseList) do
+        Inventory.AddItem(playerInv, purchase.fromItem.name, purchase.count, purchase.metadata)
+
+        if purchase.fromData.count then
+            purchase.fromData.count = purchase.fromData.count - purchase.count
+        end
+    end
+    
+    if server.syncInventory then server.syncInventory(playerInv) end
+
+    if server.loglevel > 0 then
+        lib.logger(playerInv.owner, 'buyItem', ('"%s" bought %d items for %s'):format(playerInv.label, #purchaseList, totalPrice), ('shop:%s'):format(shop.label))
+    end
+
+    return true, { playerInv.items, playerInv.weight }, { type = 'success', description = "Successflly purchased items." }
 end)
 
-lib.addCommand('takeinv', {
-    help = 'Confiscates the target inventory, to restore with /restoreinv',
-    params = {
-        { name = 'target', type = 'playerId', help = 'The player to confiscate items from' },
-    },
-    restricted = 'group.admin',
-}, function(source, args)
-    Inventory.Confiscate(args.target)
-end)
-
-lib.addCommand({ 'restoreinv', 'returninv' }, {
-    help = 'Restores a previously confiscated inventory for the target',
-    params = {
-        { name = 'target', type = 'playerId', help = 'The player to restore items to' },
-    },
-    restricted = 'group.admin',
-}, function(source, args)
-    Inventory.Return(args.target)
-end)
-
-lib.addCommand('clearinv', {
-    help = 'Wipes all items from the target inventory',
-    params = {
-        { name = 'invId', help = 'The inventory to wipe items from' },
-    },
-    restricted = 'group.admin',
-}, function(source, args)
-    Inventory.Clear(tonumber(args.invId) or args.invId == 'me' and source or args.invId)
-end)
-
-lib.addCommand('saveinv', {
-    help = 'Save all pending inventory changes to the database',
-    params = {
-        { name = 'lock', help = 'Lock inventory access, until restart or saved without a lock', optional = true },
-    },
-    restricted = 'group.admin',
-}, function(source, args)
-    Inventory.SaveInventories(args.lock == 'true', false)
-end)
-
-lib.addCommand('viewinv', {
-    help = 'Inspect the target inventory without allowing interactions',
-    params = {
-        { name = 'invId', help = 'The inventory to inspect' },
-    },
-    restricted = 'group.admin',
-}, function(source, args)
-    Inventory.InspectInventory(source, tonumber(args.invId) or args.invId)
-end)
+server.shops = Shops
