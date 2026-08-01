@@ -477,6 +477,7 @@ input[type='number']::-webkit-outer-spin-button {
 
 .inventory-wrapper {
   position: relative;
+  z-index: 1;
   display: flex;
   padding-left: 2rem;
   padding-right: 2rem;
