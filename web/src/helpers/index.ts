@@ -256,3 +256,38 @@ export const getItemUrl = (item: string | SlotWithItem) => {
 
   return itemData.image;
 };
+
+export const withAlpha = (color: string, alpha: number) => {
+  return color.replace(/rgba?\(([^)]+)\)/, (match, contents) => {
+    if (!contents) return match;
+    const parts = contents.split(',').map((p: string) => p.trim());
+    if (parts.length === 3) return `rgba(${parts.join(', ')}, ${alpha})`;
+    if (parts.length === 4) return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${alpha})`;
+    return match;
+  });
+};
+
+const cornerCache: Record<string, string> = {};
+export const cornerBackground = (color: string) => {
+  if (!cornerCache[color]) {
+    const edge = withAlpha(color, 0.9);
+    const glow = withAlpha(color, 0.22);
+    
+    cornerCache[color] = `
+      linear-gradient(to right, ${edge}, transparent) top left / 20% 2px no-repeat,
+      linear-gradient(to bottom, ${edge}, transparent) top left / 2px 20% no-repeat,
+      linear-gradient(to left, ${edge}, transparent) top right / 20% 2px no-repeat,
+      linear-gradient(to bottom, ${edge}, transparent) top right / 2px 20% no-repeat,
+      linear-gradient(to right, ${edge}, transparent) bottom left / 20% 2px no-repeat,
+      linear-gradient(to top, ${edge}, transparent) bottom left / 2px 20% no-repeat,
+      linear-gradient(to left, ${edge}, transparent) bottom right / 20% 2px no-repeat,
+      linear-gradient(to top, ${edge}, transparent) bottom right / 2px 20% no-repeat,
+      radial-gradient(circle at top left, ${glow}, transparent 10%) no-repeat,
+      radial-gradient(circle at top right, ${glow}, transparent 10%) no-repeat,
+      radial-gradient(circle at bottom left, ${glow}, transparent 10%) no-repeat,
+      radial-gradient(circle at bottom right, ${glow}, transparent 10%) no-repeat
+    `;
+  }
+
+  return cornerCache[color];
+};
