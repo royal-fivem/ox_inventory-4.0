@@ -1,18 +1,8 @@
 import React from 'react';
-import { getItemUrl, itemDurability } from '../../helpers';
+import { getItemUrl, itemDurability, withAlpha, cornerBackground } from '../../helpers';
 import { Items } from '../../store/items';
 import { getRarityKey, Rarity } from '../../store/rarity';
 import WeightBar from './WeightBar';
-
-const withAlpha = (color: string, alpha: number) => {
-  return color.replace(/rgba?\(([^)]+)\)/, (match, contents) => {
-    if (!contents) return match;
-    const parts = contents.split(',').map((p: string) => p.trim());
-    if (parts.length === 3) return `rgba(${parts.join(', ')}, ${alpha})`;
-    if (parts.length === 4) return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${alpha})`;
-    return match;
-  });
-};
 
 interface Props {
   name?: string | null;
@@ -97,20 +87,7 @@ const ItemSlotVisual: React.FC<Props> = ({
             position: 'absolute',
             inset: 0,
             pointerEvents: 'none',
-            background: `
-              linear-gradient(to right, ${withAlpha(rarityColor, 0.9)}, transparent) top left / 20% 2px no-repeat,
-              linear-gradient(to bottom, ${withAlpha(rarityColor, 0.9)}, transparent) top left / 2px 20% no-repeat,
-              linear-gradient(to left, ${withAlpha(rarityColor, 0.9)}, transparent) top right / 20% 2px no-repeat,
-              linear-gradient(to bottom, ${withAlpha(rarityColor, 0.9)}, transparent) top right / 2px 20% no-repeat,
-              linear-gradient(to right, ${withAlpha(rarityColor, 0.9)}, transparent) bottom left / 20% 2px no-repeat,
-              linear-gradient(to top, ${withAlpha(rarityColor, 0.9)}, transparent) bottom left / 2px 20% no-repeat,
-              linear-gradient(to left, ${withAlpha(rarityColor, 0.9)}, transparent) bottom right / 20% 2px no-repeat,
-              linear-gradient(to top, ${withAlpha(rarityColor, 0.9)}, transparent) bottom right / 2px 20% no-repeat,
-              radial-gradient(circle at top left, ${withAlpha(rarityColor, 0.22)}, transparent 10%) no-repeat,
-              radial-gradient(circle at top right, ${withAlpha(rarityColor, 0.22)}, transparent 10%) no-repeat,
-              radial-gradient(circle at bottom left, ${withAlpha(rarityColor, 0.22)}, transparent 10%) no-repeat,
-              radial-gradient(circle at bottom right, ${withAlpha(rarityColor, 0.22)}, transparent 10%) no-repeat
-            `,
+            background: cornerBackground(rarityColor),
           }}
         />
       )}
