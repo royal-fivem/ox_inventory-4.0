@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { TransitionGroup } from 'react-transition-group';
 import useNuiEvent from '../../hooks/useNuiEvent';
 import { Locale } from '../../store/locale';
-import { getItemUrl, itemDurability } from '../../helpers';
+import { getItemUrl, itemDurability, withAlpha, cornerBackground } from '../../helpers';
 import { SlotWithItem } from '../../typings';
 import { Items } from '../../store/items';
 import Fade from './transitions/Fade';
@@ -36,15 +36,6 @@ interface Batch {
 const GROUP_WINDOW = 300;
 const DISPLAY_MS = 2500;
 
-const withAlpha = (color: string, alpha: number) => {
-  return color.replace(/rgba?\(([^)]+)\)/, (match, contents) => {
-    if (!contents) return match;
-    const parts = contents.split(',').map((p: string) => p.trim());
-    if (parts.length === 3) return `rgba(${parts.join(', ')}, ${alpha})`;
-    if (parts.length === 4) return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${alpha})`;
-    return match;
-  });
-};
 
 export const ItemNotificationsContext = React.createContext<{
   add: (args: AddArgs) => void;
@@ -57,7 +48,8 @@ export const useItemNotifications = () => {
 };
 
 /** A single item rendered exactly like an inventory grid slot. */
-const NotifySlot: React.FC<{ item: SlotWithItem; count?: number }> = ({ item, count }) => {
+// const NotifySlot: React.FC<{ item: SlotWithItem; count?: number }> = ({ item, count }) => {
+const NotifySlot = React.memo<{ item: SlotWithItem; count?: number }>(({ item, count }) => {
   const rarityKey = getRarityKey(item?.rarity) || 'common';
   const rarityColor = Rarity[rarityKey] ?? Rarity.common;
   const label = item.label || Items[item.name]?.label || item.name;
@@ -82,6 +74,7 @@ const NotifySlot: React.FC<{ item: SlotWithItem; count?: number }> = ({ item, co
             ${item?.name ? `url(${getItemUrl(item as SlotWithItem)}) center / 4.4vh no-repeat,` : ''}
             linear-gradient(180deg, rgba(28,28,28,0.5), rgba(20,20,20,0.5))
           `,
+
           boxShadow: rarityColor ? `inset 0px 0px 18px -14px ${withAlpha(rarityColor, 0.8)}` : 'none',
         }}
       >
@@ -92,20 +85,7 @@ const NotifySlot: React.FC<{ item: SlotWithItem; count?: number }> = ({ item, co
               position: 'absolute',
               inset: 0,
               pointerEvents: 'none',
-              background: `
-                linear-gradient(to right, ${withAlpha(rarityColor, 0.9)}, transparent) top left / 20% 2px no-repeat,
-                linear-gradient(to bottom, ${withAlpha(rarityColor, 0.9)}, transparent) top left / 2px 20% no-repeat,
-                linear-gradient(to left, ${withAlpha(rarityColor, 0.9)}, transparent) top right / 20% 2px no-repeat,
-                linear-gradient(to bottom, ${withAlpha(rarityColor, 0.9)}, transparent) top right / 2px 20% no-repeat,
-                linear-gradient(to right, ${withAlpha(rarityColor, 0.9)}, transparent) bottom left / 20% 2px no-repeat,
-                linear-gradient(to top, ${withAlpha(rarityColor, 0.9)}, transparent) bottom left / 2px 20% no-repeat,
-                linear-gradient(to left, ${withAlpha(rarityColor, 0.9)}, transparent) bottom right / 20% 2px no-repeat,
-                linear-gradient(to top, ${withAlpha(rarityColor, 0.9)}, transparent) bottom right / 2px 20% no-repeat,
-                radial-gradient(circle at top left, ${withAlpha(rarityColor, 0.22)}, transparent 10%) no-repeat,
-                radial-gradient(circle at top right, ${withAlpha(rarityColor, 0.22)}, transparent 10%) no-repeat,
-                radial-gradient(circle at bottom left, ${withAlpha(rarityColor, 0.22)}, transparent 10%) no-repeat,
-                radial-gradient(circle at bottom right, ${withAlpha(rarityColor, 0.22)}, transparent 10%) no-repeat
-              `,
+              background: cornerBackground(rarityColor),
             }}
           />
         )}
@@ -137,7 +117,7 @@ const NotifySlot: React.FC<{ item: SlotWithItem; count?: number }> = ({ item, co
       </div>
     </div>
   );
-};
+});
 
 const NotificationBatch = React.forwardRef<HTMLDivElement, { batch: Batch }>(({ batch }, ref) => {
   const plural = batch.items.length > 1;
@@ -158,6 +138,8 @@ const NotificationBatch = React.forwardRef<HTMLDivElement, { batch: Batch }>(({ 
 
 export const ItemNotificationsProvider = ({ children }: { children: React.ReactNode }) => {
   const [batches, setBatches] = useState<Batch[]>([]);
+  const currentId = batches[0]?.id;
+  const currentStartedAt = batches[0]?.startedAt;
 
   const add = useCallback((args: AddArgs) => {
     setBatches((prev) => {
@@ -188,12 +170,13 @@ export const ItemNotificationsProvider = ({ children }: { children: React.ReactN
     });
   }, []);
 
+
   // start displaying the front batch
   useEffect(() => {
     const current = batches[0];
     if (!current || current.startedAt != null) return;
     setBatches((prev) => prev.map((b, i) => (i === 0 ? { ...b, startedAt: Date.now() } : b)));
-  }, [batches]);
+  }, [currentId, currentStartedAt]);
 
   // remove the front batch after its display time, revealing the next one
   useEffect(() => {
@@ -202,7 +185,7 @@ export const ItemNotificationsProvider = ({ children }: { children: React.ReactN
     const remaining = DISPLAY_MS - (Date.now() - current.startedAt);
     const timer = setTimeout(() => setBatches((prev) => prev.slice(1)), Math.max(0, remaining));
     return () => clearTimeout(timer);
-  }, [batches]);
+  }, [currentId, currentStartedAt]);
 
   useNuiEvent<[item: SlotWithItem, text: string, count?: number]>('itemNotify', ([item, text, count]) => {
     const tone: NotifyTone = text === 'ui_added' ? 'added' : text === 'ui_removed' ? 'removed' : 'neutral';
