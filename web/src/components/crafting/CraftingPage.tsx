@@ -8,7 +8,7 @@ import { InventoryType, DragSource } from '../../typings';
 import { CraftCategory, CraftingConfig, CraftRecipe, PlacedCell } from './types';
 import { DEFAULT_CATEGORIES } from './config';
 import { MOCK_CRAFTING } from './mock';
-import { buildGrid, canCraftRecipe } from './craftingHelpers';
+import { buildGrid, canCarryResult, canCraftRecipe } from './craftingHelpers';
 import CraftingCodex from './CraftingCodex';
 import CraftingBench from './CraftingBench';
 import CraftingQueue from './CraftingQueue';
@@ -252,6 +252,12 @@ const CraftingPage: React.FC<Props> = ({ visible }) => {
 
       const matched = matchRecipe(config.recipes, items);
       if (matched) {
+        if (!canCarryResult(matched)) {
+          setError('Cannot carry result');
+          window.setTimeout(() => setError(null), 2200);
+          return;
+        }
+        
         restoreAll();
         enqueue(matched);
         setError(null);
@@ -285,6 +291,13 @@ const CraftingPage: React.FC<Props> = ({ visible }) => {
 
     // known recipe mode (clicked a codex recipe)
     if (!selected || !isCraftable(selected)) return;
+
+    if (!canCarryResult(selected)) {
+      setError('Cannot carry result');
+      window.setTimeout(() => setError(null), 2200);
+      return;
+    }
+
     enqueue(selected);
   }, [manualMode, selected, isCraftable, enqueue, restoreCell, restoreAll, config.recipes]);
 
