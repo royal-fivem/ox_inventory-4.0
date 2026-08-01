@@ -1058,11 +1058,11 @@ function client.closeInventory(server)
 
     if invOpen then
         invOpen = nil
-        SetNuiFocus(false, false)
-        SetNuiFocusKeepInput(false)
         Utils.blurOut()
         closeTrunk()
         SendNUIMessage({ action = 'closeInventory' })
+        SetNuiFocus(false, false)
+        SetNuiFocusKeepInput(false)
         SetInterval(client.interval, 200)
         Wait(200)
 
