@@ -1481,6 +1481,7 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
             stack = v.stack,
             close = v.close,
             count = 0,
+            weight = v.weight,
             description = v.description,
             buttons = buttons,
             ammoName = v.ammoname,
@@ -2426,6 +2427,7 @@ RegisterNUICallback('craftPersonalRecipe', function(data, cb)
     local success, response = lib.callback.await('ox_inventory:craftPersonalRecipe', 200, data.recipeId, data.count or 1)
 
     if not success and response then
+        client.closeInventory()
         lib.notify({ type = 'error', description = locale(response) or response })
     end
 
@@ -2437,6 +2439,7 @@ RegisterNUICallback('craftHiddenRecipe', function(data, cb)
     local success, response = lib.callback.await('ox_inventory:craftHiddenRecipe', 200, data.items)
 
     if not success and response then
+        if response ~= 'no_recipe' then client.closeInventory() end
         lib.notify({ type = 'error', description = locale(response) or response })
     end
 
