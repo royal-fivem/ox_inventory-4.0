@@ -2264,18 +2264,18 @@ RegisterNUICallback('swapItems', function(data, cb)
 end)
 
 RegisterNUICallback('buyItems', function(data, cb)
-	local response, message = lib.callback.await('ox_inventory:buyItem', 100, data)
+	local success, _, message = lib.callback.await('ox_inventory:buyItem', false, data)
 
-	if response then 
-		client.closeInventory()
-	end
+	client.closeInventory()
 
 	if message then
-        lib.notify(message)
+		lib.notify(message)
 	end
 
-	cb(response)
+	cb(success)
 end)
+
+
 
 RegisterNUICallback('craftItem', function(data, cb)
     cb(true)
