@@ -76,7 +76,6 @@ const Inventory: React.FC = () => {
   useNuiEvent<boolean>('setInventoryVisible', setInventoryVisible);
   useNuiEvent<false>('closeInventory', () => {
     setInventoryVisible(false);
-    setActiveIndex(0);
     dispatch(closeContextMenu());
     dispatch(closeTooltip());
   });
@@ -92,6 +91,7 @@ const Inventory: React.FC = () => {
         })
       );
       !inventoryVisible && setInventoryVisible(true);
+      setActiveIndex(0)
     }
   );
 
