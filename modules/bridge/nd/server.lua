@@ -93,6 +93,18 @@ function server.hasLicense(inv, license)
 end
 
 ---@diagnostic disable-next-line: duplicate-set-field
+function server.getCharacterInfo(source)
+    local player = NDCore.getPlayer(source)
+
+    if not player then return end
+
+    return {
+        name = ('%s %s'):format(player.firstname, player.lastname),
+        id = player.id,
+    }
+end
+
+---@diagnostic disable-next-line: duplicate-set-field
 function server.buyLicense(inv, license)
     if server.hasLicense(inv, license.name) then
         return false, "already_have"
