@@ -56,6 +56,17 @@ end
 
 local Inventory = require 'modules.inventory.server'
 
+function server.getCharacterInfo(source)
+    local inv = Inventory(source) --[[@as OxInventory]]
+
+    if not inv then return end
+
+    return {
+        name = inv.label,
+        id = inv.owner,
+    }
+end
+
 function server.playerDropped(source)
     local inv = Inventory(source) --[[@as OxInventory]]
 
