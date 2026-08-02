@@ -373,15 +373,9 @@ input[type='number']::-webkit-outer-spin-button {
 }
 
 .character-info {
-  position: absolute;
-  top: 55px;
-  left: 0;
-  right: 0;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: baseline;
   gap: 1vh;
-  padding: 0 1.5vh;
 }
 
 .character-info-name {
@@ -702,6 +696,7 @@ input[type='number']::-webkit-outer-spin-button {
 .inventory-grid-money {
   display: flex;
   align-items: center;
+  font-variant-numeric: tabular-nums;
   gap: 0.4vh;
   font-size: 1.3vh;
   font-weight: 600;
