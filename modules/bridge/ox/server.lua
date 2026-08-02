@@ -30,6 +30,18 @@ function server.hasLicense(inv, name)
 end
 
 ---@diagnostic disable-next-line: duplicate-set-field
+function server.getCharacterInfo(source)
+    local player = Ox.GetPlayer(source)
+
+    if not player then return end
+
+    return {
+        name = ('%s %s'):format(player.firstName, player.lastName),
+        id = player.stateId,
+    }
+end
+
+---@diagnostic disable-next-line: duplicate-set-field
 function server.buyLicense(inv, license)
 	local player = Ox.GetPlayer(inv.id)
 
