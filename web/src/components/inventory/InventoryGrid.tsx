@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Inventory, InventoryType, Slot } from '../../typings';
 import WeightBar from '../utils/WeightBar';
 import InventorySlot from './InventorySlot';
@@ -7,6 +8,8 @@ import { getTotalWeight } from '../../helpers';
 import { useAppSelector } from '../../store';
 import { useIntersection } from '../../hooks/useIntersection';
 import { toAsciiLower } from '../../utils/string';
+import CharacterInfo from './CharacterInfo';
+import Fade from '../utils/transitions/Fade';
 
 const PAGE_SIZE = 30;
 
@@ -50,7 +53,6 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
         : 0,
     [inventory.maxWeight, inventory.items]
   );
-
   const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed ?? false);
@@ -58,6 +60,13 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { ref, entry } = useIntersection({ threshold: 0.5 });
   const isBusy = useAppSelector((state) => state.inventory.isBusy);
+  const moneyValue = useMotionValue(money ?? 0);
+  const springMoney = useSpring(moneyValue, { stiffness: 140, damping: 22, mass: 0.6 });
+  const displayMoney = useTransform(springMoney, (v) => Math.round(v).toLocaleString('en-us'));
+
+  useEffect(() => {
+    moneyValue.set(money ?? 0);
+  }, [money, moneyValue]);
 
   useEffect(() => {
     if (entry && entry.isIntersecting) {
@@ -182,11 +191,13 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
           >
             <div className="inventory-grid-header-title">
               <h1>{headerTitle}</h1>
-              {money !== undefined && (
+              {inventory.type === InventoryType.PLAYER && <CharacterInfo />}
+
+              <Fade in={(money ?? 0) > 0}>
                 <span className="inventory-grid-money">
-                  <i className="fa-solid fa-money-bill"></i> ${money.toLocaleString('en-us')}
+                  <i className="fa-solid fa-money-bill"></i> $<motion.span>{displayMoney}</motion.span>
                 </span>
-              )}
+              </Fade>
             </div>
 
             {collapsible && (
