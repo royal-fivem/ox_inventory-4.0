@@ -1881,6 +1881,10 @@ RegisterNUICallback('getItemData', function(itemName, cb)
     cb(Items[itemName])
 end)
 
+RegisterNUICallback('getCharacterInfo', function(_, cb)
+    cb(lib.callback.await('ox_inventory:getCharacterInfo', false) or {})
+end)
+
 RegisterNUICallback('removeComponent', function(data, cb)
     cb(1)
 
