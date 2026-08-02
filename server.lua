@@ -476,6 +476,15 @@ lib.callback.register('ox_inventory:getBackpackInventory', function(source)
     return data
 end)
 
+lib.callback.register('ox_inventory:getCharacterInfo', function(source)
+    local info = server.getCharacterInfo(source)
+
+    if not info then return end
+
+    return info
+end)
+
+
 local Licenses = lib.load('data.licenses')
 
 lib.callback.register('ox_inventory:buyLicense', function(source, id)
