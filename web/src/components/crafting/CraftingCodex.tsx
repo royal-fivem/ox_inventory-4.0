@@ -13,6 +13,7 @@ interface Props {
   favorites: Set<string>;
   onToggleFavorite: (id: string) => void;
   isCraftable: (recipe: CraftRecipe) => boolean;
+  loaded?: boolean;
 }
 
 const CraftingCodex: React.FC<Props> = ({
@@ -23,6 +24,7 @@ const CraftingCodex: React.FC<Props> = ({
   favorites,
   onToggleFavorite,
   isCraftable,
+  loaded,
 }) => {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -116,7 +118,8 @@ const CraftingCodex: React.FC<Props> = ({
       </div>
 
       <div className="craft-codex-body">
-        {groups.length === 0 && <div className="craft-codex-empty">No recipes found</div>}
+        {groups.length === 0 && loaded && <div className="craft-codex-empty">No recipes found</div>}
+
 
         {groups.map(({ cat, items }) => (
           <div key={cat.id} className="craft-codex-category">

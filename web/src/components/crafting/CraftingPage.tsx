@@ -33,6 +33,12 @@ const matchRecipe = (recipes: CraftRecipe[], placed: Record<string, number>): Cr
   return null;
 };
 
+let cachedConfig: CraftingConfig | null = null;
+
+export const primeCraftingConfig = (data: CraftingConfig) => {
+  cachedConfig = data;
+};
+
 const loadFavorites = (): Set<string> => {
   try {
     const raw = localStorage.getItem(FAV_KEY);
@@ -43,7 +49,8 @@ const loadFavorites = (): Set<string> => {
 };
 
 const CraftingPage: React.FC<Props> = ({ visible }) => {
-  const [config, setConfig] = useState<CraftingConfig>({ categories: [], recipes: [] });
+  const [config, setConfig] = useState<CraftingConfig>(cachedConfig ?? { categories: [], recipes: [] });
+  const [loaded, setLoaded] = useState(cachedConfig !== null);
   const [selected, setSelected] = useState<CraftRecipe | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(loadFavorites);
   const [manualCells, setManualCells] = useState<(PlacedCell | null)[]>(EMPTY_CELLS);
@@ -199,18 +206,24 @@ const CraftingPage: React.FC<Props> = ({ visible }) => {
   // --- load config ---
   const load = useCallback(() => {
     if (isEnvBrowser()) {
+      cachedConfig = MOCK_CRAFTING;
       setConfig(MOCK_CRAFTING);
+      setLoaded(true);
       return;
     }
+
     fetchNui<CraftingConfig>('getPersonalCrafting')
       .then((data) => {
-        if (data && Array.isArray(data.recipes)) setConfig(data);
+        if (data && Array.isArray(data.recipes)) {
+          cachedConfig = data;
+          setConfig(data);
+        }
       })
-      .catch(() => {});
+      .finally(() => setLoaded(true));
   }, []);
 
   useEffect(() => {
-    if (visible) load();
+    if (visible && !cachedConfig) load();
   }, [visible, load]);
 
   useNuiEvent<CraftingConfig>('setPersonalCrafting', (data) => {
@@ -343,6 +356,7 @@ const CraftingPage: React.FC<Props> = ({ visible }) => {
         favorites={favorites}
         onToggleFavorite={toggleFavorite}
         isCraftable={isCraftable}
+        loaded={loaded}
       />
     </div>
   );

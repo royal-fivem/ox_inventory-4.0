@@ -12,6 +12,8 @@ import { fetchNui } from './utils/fetchNui';
 import { useDragDropManager } from 'react-dnd';
 import KeyPress from './components/utils/KeyPress';
 import { setUtilitySlotRestrictions } from './utils/utilitySlotValidation';
+import { primeCraftingConfig } from './components/crafting/CraftingPage';
+import { CraftingConfig } from './components/crafting/types';
 
 debugData([
   {
@@ -292,6 +294,12 @@ const App: React.FC = () => {
       .catch((error) => {
         console.warn('Failed to fetch slot restrictions:', error);
       });
+
+    fetchNui<CraftingConfig>('getPersonalCrafting')
+      .then((data) => {
+        if (data && Array.isArray(data.recipes)) primeCraftingConfig(data);
+      })
+      .catch(() => {});
   });
 
   useNuiEvent('closeInventory', () => {
