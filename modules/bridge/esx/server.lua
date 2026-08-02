@@ -48,6 +48,21 @@ function server.setPlayerData(player)
 end
 
 ---@diagnostic disable-next-line: duplicate-set-field
+function server.getCharacterInfo(source)
+    if not ESX then return end
+
+    local xPlayer = ESX.GetPlayerFromId(source)
+
+    if not xPlayer then return end
+
+    return {
+        name = xPlayer.getName(),
+        id = xPlayer.getSSN and xPlayer.getSSN() or xPlayer.identifier,
+    }
+end
+
+
+---@diagnostic disable-next-line: duplicate-set-field
 function server.syncInventory(inv)
 	local accounts = Inventory.GetAccountItemCounts(inv)
 
