@@ -94,6 +94,7 @@ function server.buyLicense(inv, license)
     return true, 'have_purchased'
 end
 
+---@diagnostic disable-next-line: duplicate-set-field
 function server.hasBalance(source, amt)
     local char = QBX:GetPlayer(source)
 
@@ -108,6 +109,7 @@ function server.hasBalance(source, amt)
     return false
 end
 
+---@diagnostic disable-next-line: duplicate-set-field
 function server.withdrawMoney(source, amt)
     local char = QBX:GetPlayer(source)
 
@@ -121,6 +123,20 @@ function server.withdrawMoney(source, amt)
     end
 
     return false
+end
+
+---@diagnostic disable-next-line: duplicate-set-field
+function server.getCharacterInfo(source)
+    local player = QBX:GetPlayer(source)
+
+    if not player then return end
+
+    local charinfo = player.PlayerData.charinfo
+
+    return {
+        name = ('%s %s'):format(charinfo.firstname, charinfo.lastname),
+        id = player.PlayerData.citizenid,
+    }
 end
 
 ---@diagnostic disable-next-line: duplicate-set-field
