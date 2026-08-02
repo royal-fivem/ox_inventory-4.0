@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import useNuiEvent from '../../hooks/useNuiEvent';
+import { fetchNui } from '../../utils/fetchNui';
+import { isEnvBrowser } from '../../utils/misc';
 
 interface CharacterData {
   name?: string;
@@ -10,6 +12,15 @@ const CharacterInfo: React.FC = () => {
   const [data, setData] = useState<CharacterData>({});
 
   useNuiEvent<CharacterData>('setCharacterInfo', setData);
+
+  useEffect(() => {
+    if (isEnvBrowser()) return;
+
+    fetchNui<CharacterData>('getCharacterInfo')
+      .then((res) => res && setData(res))
+      .catch(() => {});
+  }, []);
+
 
   if (!data.name && data.id === undefined) return null;
 
