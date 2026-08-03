@@ -262,7 +262,7 @@ function client.openInventory(inv, data)
         end
 
         if IsNuiFocused() then
-            if inv == 'container' and currentInventory.id == PlayerData.inventory[data].metadata.container then
+            if inv == 'container' and currentInventory.id == PlayerData.inventory[data]?.metadata?.container then
                 return client.closeInventory()
             end
 
@@ -2454,6 +2454,10 @@ end)
 RegisterNUICallback('openPhone', function(data, cb)
     cb(1)
     local slot = data and data.slot or 8
+    local item = PlayerData.inventory[slot]
+
+    if not (item and item.metadata and item.metadata.container) then return end
+
     client.openInventory('container', slot)
 end)
 
