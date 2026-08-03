@@ -2,7 +2,7 @@ import { Inventory, InventoryType, ItemData, Slot, SlotWithItem, State } from '.
 import { isEqual } from 'lodash';
 import { store } from '../store';
 import { Items } from '../store/items';
-import { imagepath } from '../store/imagepath';
+import { imageformat, imagepath } from '../store/imagepath';
 import { fetchNui } from '../utils/fetchNui';
 import { isUtilitySlot } from '../utils/utilitySlotValidation';
 
@@ -233,6 +233,33 @@ export const getItemData = async (itemName: string) => {
   }
 };
 
+const IMAGE_EXTENSIONS = /\.(png|jpe?g|webp|gif)$/i;
+const sanitizeImageUrl = (url: string): string | undefined => {
+  if (typeof url !== 'string' || url.length > 512) return;
+
+  let parsed: URL;
+
+  try {
+    parsed = new URL(url);
+  } catch {
+    return;
+  }
+
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return;
+  if (!IMAGE_EXTENSIONS.test(parsed.pathname)) return;
+
+  return encodeURI(parsed.href);
+};
+
+const SAFE_FILENAME = /^([\w-]+)(?:\.(?:png|jpe?g|webp|gif))?$/i;
+const sanitizeImageName = (name: string): string | undefined => {
+  if (typeof name !== 'string' || name.length > 128) return;
+
+  const match = SAFE_FILENAME.exec(name);
+
+  return match?.[1];
+};
+
 export const getItemUrl = (item: string | SlotWithItem) => {
   const isObj = typeof item === 'object';
 
@@ -241,18 +268,20 @@ export const getItemUrl = (item: string | SlotWithItem) => {
 
     const metadata = item.metadata;
 
-    // @todo validate urls and support webp
-    if (metadata?.imageurl) return `${metadata.imageurl}`;
-    if (metadata?.image) return `${imagepath}/${metadata.image}.png`;
+    if (metadata?.imageurl) return sanitizeImageUrl(metadata.imageurl);
+    if (metadata?.image) {
+      const safe = sanitizeImageName(metadata.image);
+      if (safe) return `${imagepath}/${safe}.${imageformat}`;
+    }
   }
 
   const itemName = isObj ? (item.name as string) : item;
   const itemData = Items[itemName];
 
-  if (!itemData) return `${imagepath}/${itemName}.png`;
+  if (!itemData) return `${imagepath}/${itemName}.${imageformat}`;
   if (itemData.image) return itemData.image;
 
-  itemData.image = `${imagepath}/${itemName}.png`;
+  itemData.image = `${imagepath}/${itemName}.${imageformat}`;
 
   return itemData.image;
 };

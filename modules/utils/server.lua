@@ -4,23 +4,25 @@ local Utils = {}
 
 local webHook = GetConvar('inventory:webhook', '')
 
+
+local validHosts = {
+	['i.imgur.com'] = true,
+}
+
+local validExtensions = {
+	['png'] = true,
+	['apng'] = true,
+	['webp'] = true,
+}
+
+function Utils.IsValidImageUrl(url)
+	if url:find('[%s%(%);"\'\\]') then return false end
+	local host, extension = url:match('^https?://([^/]+).+%.([%l]+)$')
+	return host and extension and validHosts[host] and validExtensions[extension]
+end
+
 if webHook ~= '' then
-	local validHosts = {
-		['i.imgur.com'] = true,
-	}
-
-	local validExtensions = {
-		['png'] = true,
-		['apng'] = true,
-		['webp'] = true,
-	}
-
 	local headers = { ['Content-Type'] = 'application/json' }
-
-	function Utils.IsValidImageUrl(url)
-		local host, extension = url:match('^https?://([^/]+).+%.([%l]+)')
-		return host and extension and validHosts[host] and validExtensions[extension]
-	end
 
 	---@param title string
 	---@param message string

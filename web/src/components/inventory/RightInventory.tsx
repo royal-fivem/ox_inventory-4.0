@@ -442,32 +442,28 @@ const RightInventory: React.FC = () => {
 
     return (
         <div className={`right-inventory ${type === 'shop' ? 'right-inventory-shop' : ''}`}>
+            {rightInventory && type === "otherplayer" && (
+                <div className="inventory-item">
+                    <InventoryGrid
+                        inventory={rightInventoryHotbar()}
+                        hideExtras={hideExtras}
+                        noWrapper={false}
+                    />
+                </div>
+            )}
+
+            {rightInventory && type !== "crafting" && (
+                <div className="inventory-item">
+                    <InventoryGrid
+                        inventory={rightInventory}
+                        hideExtras={hideExtras}
+                        noWrapper={false}
+                        onCtrlClick={addToCart}
+                    />
+                </div>
+            )}
+
             <AnimatePresence>
-                {rightInventory && type === "otherplayer" && (
-                    <div key={InventoryType.OTHERPLAYER_HOTBAR} className="inventory-item">
-                        <motion.div>
-                            <InventoryGrid
-                                inventory={rightInventoryHotbar()}
-                                hideExtras={hideExtras}
-                                noWrapper={false}
-                            />
-                        </motion.div>
-                    </div>
-                )}
-
-                {rightInventory && type !== "crafting" && (
-                    <div key={rightInventory.type} className="inventory-item">
-                        <motion.div>
-                            <InventoryGrid
-                                inventory={rightInventory}
-                                hideExtras={hideExtras}
-                                noWrapper={false}
-                                onCtrlClick={addToCart}
-                            />
-                        </motion.div>
-                    </div>
-                )}
-
                 {/* Shopping cart appears from bottom */}
                 {type === 'shop' && (
                     <motion.div 

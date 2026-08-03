@@ -1588,6 +1588,7 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
                 maxWeight = shared.playerweight,
             },
             imagepath = client.imagepath,
+            imageformat = client.imageformat,
             backpackSlot = shared.backpackSlot,
             craftingInventory = false,
             craftingInventoryEnabled = false

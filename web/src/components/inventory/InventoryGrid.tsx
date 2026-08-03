@@ -116,9 +116,10 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
     if (inventory.type == 'stash') return inventory.label || 'Stash';
     if (inventory.type === 'dumpster') return 'Dumpster';
     if (inventory.type === 'drop') return 'Ground';
+    if (inventory.type === 'newdrop') return 'Ground';
     if (inventory.type === 'trunk') return 'Trunk';
     if (inventory.type === 'glovebox') return 'Glovebox';
-    return 'Ground';
+    return inventory.label || 'Ground';
   }, [inventory.label, inventory.type]);
 
   const gridContent = (
