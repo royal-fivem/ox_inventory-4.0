@@ -8,16 +8,30 @@ interface CharacterData {
   id?: string | number;
 }
 
-const CharacterInfo: React.FC = () => {
-  const [data, setData] = useState<CharacterData>({});
+let cachedInfo: CharacterData | null = null;
 
-  useNuiEvent<CharacterData>('setCharacterInfo', setData);
+export const CachedCharacterInfo = (info: CharacterData) => {
+  cachedInfo = info;
+}
+
+const CharacterInfo: React.FC = () => {
+  const [data, setData] = useState<CharacterData>(cachedInfo ?? {});
+
+  useNuiEvent<CharacterData>('setCharacterInfo', (res) => {
+    cachedInfo = res;
+    setData(res);
+  });
+
 
   useEffect(() => {
-    if (isEnvBrowser()) return;
+    if (isEnvBrowser() || cachedInfo) return;
 
     fetchNui<CharacterData>('getCharacterInfo')
-      .then((res) => res && setData(res))
+      .then((res) => {
+        if (!res) return;
+        cachedInfo = res;
+        setData(res);
+      })
       .catch(() => {});
   }, []);
 

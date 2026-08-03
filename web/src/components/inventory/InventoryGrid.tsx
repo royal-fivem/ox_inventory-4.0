@@ -191,13 +191,16 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
           >
             <div className="inventory-grid-header-title">
               <h1>{headerTitle}</h1>
-              {inventory.type === InventoryType.PLAYER && <CharacterInfo />}
+              
+              {inventory.type === InventoryType.PLAYER && (
+                <>
+                  <CharacterInfo />
 
-              <Fade in={(money ?? 0) > 0}>
-                <span className="inventory-grid-money">
-                  <i className="fa-solid fa-money-bill"></i> $<motion.span>{displayMoney}</motion.span>
-                </span>
-              </Fade>
+                  <span className="inventory-grid-money">
+                    <i className="fa-solid fa-money-bill"></i> $<motion.span>{displayMoney}</motion.span>
+                  </span>
+                </>
+              )}
             </div>
 
             {collapsible && (

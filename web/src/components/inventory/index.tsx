@@ -24,6 +24,7 @@ import CraftingPage from '../crafting/CraftingPage';
 import HealthPage from '../health/HealthPage';
 import HealthFigure from '../health/HealthFigure';
 import { useHealthData } from '../health/useHealthData';
+import { CachedCharacterInfo } from './CharacterInfo';
 
 const HEALTH_INDEX = 1;
 const CRAFTING_INDEX = 2;
@@ -51,6 +52,10 @@ const Inventory: React.FC = () => {
       .catch(() => setHasExperience(false));
   }, [inventoryVisible]);
 
+  fetchNui<{ name?: string; id?: string | number }>('getCharacterInfo')
+    .then((res) => res && CachedCharacterInfo(res))
+    .catch(() => {});
+  
   useNuiEvent<unknown[]>('setExperience', (data) => {
     setHasExperience(Array.isArray(data) && data.length > 0);
   });
