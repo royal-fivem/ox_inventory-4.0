@@ -124,6 +124,9 @@ return {
 			label = 'Phone',
 			slots = 1,
 			maxWeight = 2000,
+			whitelist = {
+				'simcard',
+            }
 		},
 	},
 
