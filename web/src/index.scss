@@ -694,6 +694,7 @@ input[type='number']::-webkit-outer-spin-button {
 }
 
 .inventory-grid-money {
+  position: relative;
   display: flex;
   align-items: center;
   font-variant-numeric: tabular-nums;
@@ -705,6 +706,29 @@ input[type='number']::-webkit-outer-spin-button {
   i {
     color: rgb(162, 202, 49);
   }
+}
+
+.inventory-grid-money-breakdown {
+  position: absolute;
+  bottom: calc(100% + 0.6vh);
+  left: 0;
+  z-index: 10;
+  white-space: nowrap;
+  padding: 0.5vh 0.8vh;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(10, 10, 15, 0.95);
+  font-size: 1.1vh;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(0.3vh);
+  transition: opacity 250ms ease, transform 250ms ease;
+}
+
+.inventory-grid-money-breakdown.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .inventory-grid-header-stats {

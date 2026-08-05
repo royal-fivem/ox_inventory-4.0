@@ -23,6 +23,8 @@ interface InventoryGridProps {
   collapsible?: boolean;
   defaultCollapsed?: boolean;
   money?: number;
+  pocketMoney?: number;
+  backpackMoney?: number;
 }
 
 interface ShopItem {
@@ -45,6 +47,8 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
   collapsible,
   defaultCollapsed,
   money,
+  pocketMoney,
+  backpackMoney,
 }) => {
   const weight = useMemo(
     () =>
@@ -63,10 +67,26 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
   const moneyValue = useMotionValue(money ?? 0);
   const springMoney = useSpring(moneyValue, { stiffness: 140, damping: 22, mass: 0.6 });
   const displayMoney = useTransform(springMoney, (v) => Math.round(v).toLocaleString('en-us'));
+  const [showMoneyBreakdown, setShowMoneyBreakdown] = useState(false);
+  const breakdownTimer = useRef<number>();
 
   useEffect(() => {
     moneyValue.set(money ?? 0);
   }, [money, moneyValue]);
+
+  const openBreakdown = useCallback(() => {
+    if (breakdownTimer.current) window.clearTimeout(breakdownTimer.current);
+    breakdownTimer.current = window.setTimeout(() => setShowMoneyBreakdown(true), 500);
+  }, []);
+
+  const closeBreakdown = useCallback(() => {
+    if (breakdownTimer.current) window.clearTimeout(breakdownTimer.current);
+    setShowMoneyBreakdown(false);
+  }, []);
+
+  useEffect(() => () => {
+    if (breakdownTimer.current) window.clearTimeout(breakdownTimer.current);
+  }, []);
 
   useEffect(() => {
     if (entry && entry.isIntersecting) {
@@ -197,12 +217,40 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
                 <>
                   <CharacterInfo />
 
+                  <span
+                    className="inventory-grid-money"
+                    onMouseEnter={openBreakdown}
+                    onMouseLeave={closeBreakdown}
+                  >
+                    <i className="fa-solid fa-money-bill"></i> $<motion.span>{displayMoney}</motion.span>
+
+                    <span
+                      className={`inventory-grid-money-breakdown ${
+                        showMoneyBreakdown && (backpackMoney ?? 0) > 0 ? 'visible' : ''
+                      }`}
+                    >
+                      Pockets: ${(pocketMoney ?? 0).toLocaleString('en-us')}
+                      {' · '}
+                      Backpack: ${(backpackMoney ?? 0).toLocaleString('en-us')}
+                    </span>
+                  </span>
+                </>
+              )}
+            </div>
+            
+            {/* <div className="inventory-grid-header-title">
+              <h1>{headerTitle}</h1>
+              
+              {inventory.type === InventoryType.PLAYER && (
+                <>
+                  <CharacterInfo />
+
                   <span className="inventory-grid-money">
                     <i className="fa-solid fa-money-bill"></i> $<motion.span>{displayMoney}</motion.span>
                   </span>
                 </>
               )}
-            </div>
+            </div> */}
 
             {collapsible && (
               <span

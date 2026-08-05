@@ -1728,7 +1728,7 @@ local TriggerEventHooks = require 'modules.hooks.server'
 ---@param playerInventory OxInventory
 ---@param fromData SlotWithItem?
 ---@param data SwapSlotData
-local function dropItem(source, playerInventory, fromData, data)
+local function dropItem(source, fromInventory, fromData, data)
     if not fromData then return end
 
     local toData = table.clone(fromData)
@@ -1742,9 +1742,9 @@ local function dropItem(source, playerInventory, fromData, data)
 
     if not TriggerEventHooks('swapItems', {
             source = source,
-            fromInventory = playerInventory.id,
+            fromInventory = fromInventory.id,
             fromSlot = fromData,
-            fromType = playerInventory.type,
+            fromType = fromInventory.type,
             toInventory = 'newdrop',
             toSlot = data.toSlot,
             toType = 'drop',
@@ -1765,11 +1765,21 @@ local function dropItem(source, playerInventory, fromData, data)
     end
 
     local slot = data.fromSlot
-    playerInventory.weight -= toData.weight
-    playerInventory.items[slot] = fromData
+    fromInventory.weight -= toData.weight
+    fromInventory.items[slot] = fromData
 
-    if slot == playerInventory.weapon then
-        playerInventory.weapon = nil
+    if fromInventory.type == 'container' then
+        local playerInv = Inventory(source)
+        local containerSlot = playerInv and shared.backpackSlot
+        local containerItem = containerSlot and playerInv.items[containerSlot]
+
+        if containerItem and containerItem.metadata?.container == fromInventory.id then
+            Inventory.ContainerWeight(containerItem, fromInventory.weight, playerInv)
+        end
+    end
+
+    if fromInventory.player and slot == fromInventory.weapon then
+        fromInventory.weapon = nil
     end
 
     local inventory = Inventory.Create(dropId, ('Drop %s'):format(dropId:gsub('%D', '')), 'drop', shared.dropslots,
@@ -1779,24 +1789,25 @@ local function dropItem(source, playerInventory, fromData, data)
 
     inventory.coords = data.coords
     Inventory.Drops[dropId] = { coords = inventory.coords, instance = data.instance }
-    playerInventory.changed = true
+    fromInventory.changed = true
 
-    TriggerClientEvent('ox_inventory:createDrop', -1, dropId, Inventory.Drops[dropId], playerInventory.open and source,
+    TriggerClientEvent('ox_inventory:createDrop', -1, dropId, Inventory.Drops[dropId], fromInventory.open and source,
         slot)
 
     if server.loglevel > 0 then
-        lib.logger(playerInventory.owner, 'swapSlots',
-            ('%sx %s transferred from "%s" to "%s"'):format(data.count, toData.name, playerInventory.label, dropId))
+        lib.logger(fromInventory.owner, 'swapSlots',
+            ('%sx %s transferred from "%s" to "%s"'):format(data.count, toData.name, fromInventory.label, dropId))
     end
 
-    if server.syncInventory then server.syncInventory(playerInventory) end
+    if fromInventory.player and server.syncInventory then server.syncInventory(fromInventory) end
+
 
     return true, {
-        weight = playerInventory.weight,
+        weight = fromInventory.weight,
         items = {
             {
                 item = fromData or { slot = data.fromSlot },
-                inventory = playerInventory.id
+                inventory = fromInventory.id
             }
         }
     }
@@ -1937,7 +1948,7 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
         end
 
         if data.toType == 'newdrop' then
-            return dropItem(source, playerInventory, fromData, data)
+            return dropItem(source, fromInventory, fromData, data)
         end
 
         if fromData then

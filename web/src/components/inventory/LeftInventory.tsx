@@ -20,6 +20,18 @@ const LeftInventory: React.FC = () => {
     [leftInventory.items]
   );
 
+  const backpackMoney = useMemo(
+    () =>
+      (backpackInventory?.items ?? []).reduce(
+        (total, slot) => (slot.name === 'money' ? total + (slot.count ?? 0) : total),
+        0
+      ),
+    [backpackInventory?.items]
+  );
+
+  const totalMoney = money + backpackMoney;
+
+
   // Slots 1-12 are reserved utility slots (hotkeys + equipment), so the Pockets grid starts at 13.
   const displayItems = useMemo(() => leftInventory.items.filter(item => item.slot > 12), [leftInventory.items]);
   
@@ -46,7 +58,9 @@ const LeftInventory: React.FC = () => {
             inventory={leftInventory}
             itemsOverride={displayItems}
             collapsible
-            money={money}
+            money={totalMoney}
+            pocketMoney={money}
+            backpackMoney={backpackMoney}
           />
           {shouldShowBackpack && (
             <div style={{ marginTop: '1vh' }}>
