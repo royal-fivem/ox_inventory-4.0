@@ -124,7 +124,10 @@ function server.setPlayerInventory(player, data)
 
     if inv then
         inv.player = server.setPlayerData(player)
-        inv.player.ped = GetPlayerPed(player.source)
+
+        repeat
+            inv.player.ped = GetPlayerPed(player.source)
+        until inv.player.ped ~= 0
 
         if server.syncInventory then server.syncInventory(inv) end
         TriggerClientEvent('ox_inventory:setPlayerInventory', player.source, Inventory.Drops, inventory, totalWeight,
@@ -388,7 +391,9 @@ local function openInventory(source, invType, data, ignoreSecurityChecks)
         if invType == 'container' then hookPayload.slot = left.containerSlot end
         if isDataTable and data.netid then hookPayload.netId = data.netid end
 
-        if not TriggerEventHooks('openInventory', hookPayload) then return end
+        local hooks <close> = TriggerEventHooks('openInventory', hookPayload)
+
+        if not hooks.success then return end
 
         if left == right then return end
 
@@ -472,9 +477,9 @@ lib.callback.register('ox_inventory:getBackpackInventory', function(source)
     local playerInventory = Inventory(source)
     if not playerInventory then return end
 
-    local data = buildBackpackInventory(playerInventory)
-    return data
+    return buildBackpackInventory(playerInventory)
 end)
+
 
 lib.callback.register('ox_inventory:getCharacterInfo', function(source)
     local info = server.getCharacterInfo(source)
@@ -535,6 +540,8 @@ RegisterNetEvent('ox_inventory:usedItemInternal', function(slot)
     inventory.usingItem = nil
 end)
 
+local GetLocks = require 'modules.locks'
+
 ---@param source number
 ---@param itemName string
 ---@param slot number?
@@ -587,6 +594,12 @@ lib.callback.register('ox_inventory:useItem', function(source, itemName, slot, m
         end
 
         if item and data and data.count > 0 and data.name == item.name then
+            local activeSlots <close> = GetLocks({
+                ('inventory-%s:slot-%s'):format(inventory.id, slot),
+            })
+
+            if not activeSlots then return end
+
             data = {
                 name = data.name,
                 label = label,
@@ -635,14 +648,14 @@ lib.callback.register('ox_inventory:useItem', function(source, itemName, slot, m
 
             data.consume = consume
 
-            if not TriggerEventHooks('usingItem', {
-                    source = source,
-                    inventoryId = inventory and inventory.id,
-                    item = inventory.items[slot],
-                    consume = consume
-                }) then
-                return false
-            end
+            local hooks <close> = TriggerEventHooks('usingItem', {
+                source = source,
+                inventoryId = inventory and inventory.id,
+                item = inventory.items[slot],
+                consume = consume
+            })
+
+            if not hooks.success then return false end
 
             ---@type boolean
             local success = lib.callback.await('ox_inventory:usingItem', source, data, noAnim)
@@ -674,8 +687,7 @@ lib.callback.register('ox_inventory:useItem', function(source, itemName, slot, m
                         local emptySlot = Inventory.GetEmptySlot(inventory)
 
                         if emptySlot then
-                            local newItem = Inventory.SetSlot(inventory, item, 1, table.deepclone(data.metadata),
-                                emptySlot)
+                            local ok, newItem = Inventory.SetSlot(inventory, item, 1, table.deepclone(data.metadata), slot)
 
                             if newItem then
                                 Items.UpdateDurability(inventory, newItem, item, durability)

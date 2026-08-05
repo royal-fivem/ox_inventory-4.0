@@ -68,7 +68,7 @@ const LeftInventory: React.FC = () => {
                 inventory={backpackPanel}
                 hideHeader={false}
                 collapsible
-                defaultCollapsed
+                // defaultCollapsed
               />
             </div>
           )}

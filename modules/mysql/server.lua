@@ -134,11 +134,11 @@ function db.loadPlayer(identifier)
 end
 
 function db.savePlayer(owner, inventory)
-    return MySQL.prepare(Query.UPDATE_PLAYER, { inventory, owner })
+    return MySQL.prepare.await(Query.UPDATE_PLAYER, { inventory, owner })
 end
 
 function db.saveStash(owner, dbId, inventory)
-    return MySQL.prepare(Query.UPSERT_STASH, { inventory, owner and tostring(owner) or '', dbId })
+    return MySQL.prepare.await(Query.UPSERT_STASH, { inventory, owner and tostring(owner) or '', dbId })
 end
 
 function db.loadStash(owner, name)
@@ -146,7 +146,7 @@ function db.loadStash(owner, name)
 end
 
 function db.saveGlovebox(id, inventory)
-    return MySQL.prepare(Query.UPDATE_GLOVEBOX, { inventory, id })
+    return MySQL.prepare.await(Query.UPDATE_GLOVEBOX, { inventory, id })
 end
 
 function db.loadGlovebox(id)
@@ -154,7 +154,7 @@ function db.loadGlovebox(id)
 end
 
 function db.saveTrunk(id, inventory)
-    return MySQL.prepare(Query.UPDATE_TRUNK, { inventory, id })
+    return MySQL.prepare.await(Query.UPDATE_TRUNK, { inventory, id })
 end
 
 function db.loadTrunk(id)

@@ -195,7 +195,7 @@ function Items.Metadata(inv, item, metadata, count)
         end
     else
         local container = Items.containers[item.name]
-
+        
         if container then
             count = 1
             metadata.container = metadata.container or GenerateText(3) .. os.time()
@@ -260,16 +260,18 @@ function Items.Metadata(inv, item, metadata, count)
         count = 1
     end
 
-    local response = TriggerEventHooks('createItem', {
-        inventoryId = inv and inv.id,
-        metadata = metadata,
-        item = item,
-        count = count,
-    })
+    local hooks <close> = TriggerEventHooks('createItem', {
+		inventoryId = inv and inv.id,
+		metadata = metadata,
+		item = item,
+		count = count,
+		resource = GetInvokingResource() or shared.resource
+	})
 
-    if type(response) == 'table' then
-        metadata = response
-    end
+	if hooks.success and type(hooks.result) == 'table' then
+		metadata = hooks.result
+	end
+
 
     if metadata.imageurl and Utils.IsValidImageUrl then
         if Utils.IsValidImageUrl(metadata.imageurl) then
