@@ -377,15 +377,28 @@ local function minimal(inv)
     return inventory
 end
 
+local Items = require 'modules.items.server'
+
 ---@param inv inventory
----@param item table
+---@param item table | string
 ---@param count number
 ---@param metadata any
----@param slot any
+---@param slot number
+---@return boolean success, SlotWithItem | string | nil
 function Inventory.SetSlot(inv, item, count, metadata, slot)
     inv = Inventory(inv) --[[@as OxInventory]]
 
-    if not inv then return end
+    if not inv?.slots then return false, 'invalid_inventory' end
+
+    if type(count) ~= 'number' then return false, 'invalid_count' end
+
+    count = math.floor(count + 0.5)
+
+    if type(item) ~= 'table' then
+        item = Items(item)
+
+        if not item then return false, 'invalid_item' end
+    end
 
     local currentSlot = inv.items[slot]
     local newCount = currentSlot and currentSlot.count + count or count
@@ -435,7 +448,7 @@ function Inventory.SetSlot(inv, item, count, metadata, slot)
         end
     end
 
-    return currentSlot
+    return true, currentSlot
 end
 
 local Items = require 'modules.items.server'
@@ -1312,7 +1325,12 @@ function Inventory.AddItem(inv, item, count, metadata, slot, cb)
     local toSlotType = type(toSlot)
 
     if toSlotType == 'number' then
-        Inventory.SetSlot(inv, item, slotCount, slotMetadata, toSlot)
+        local ok, err = Inventory.SetSlot(inv, item, slotCount, slotMetadata, toSlot)
+
+        if not ok then
+            lib.print.error(('AddItem: SetSlot rejected "%s" for "%s" (%s)'):format(item.name, inv.id, err))
+            return false, err
+        end
 
         if inv.player and server.syncInventory then
             server.syncInventory(inv)
@@ -1337,8 +1355,14 @@ function Inventory.AddItem(inv, item, count, metadata, slot, cb)
 
         for i = 1, #toSlot do
             local data = toSlot[i]
+            local ok, err = Inventory.SetSlot(inv, item, data.count, data.metadata, data.slot)
+
+            if not ok then
+                lib.print.error(('AddItem: SetSlot rejected "%s" for "%s" (%s)'):format(item.name, inv.id, err))
+                return false, err
+            end
+
             added += data.count
-            Inventory.SetSlot(inv, item, data.count, data.metadata, data.slot)
             toSlot[i] = { item = inv.items[data.slot], inventory = inv.id }
         end
 
@@ -1740,20 +1764,21 @@ local function dropItem(source, fromInventory, fromData, data)
 
     local dropId = generateInvId('drop')
 
-    if not TriggerEventHooks('swapItems', {
-            source = source,
-            fromInventory = fromInventory.id,
-            fromSlot = fromData,
-            fromType = fromInventory.type,
-            toInventory = 'newdrop',
-            toSlot = data.toSlot,
-            toType = 'drop',
-            count = data.count,
-            action = 'move',
-            dropId = dropId,
-        }) then
-        return
-    end
+	local hooks <close> = TriggerEventHooks('swapItems', {
+		source = source,
+		fromInventory = fromInventory.id,
+		fromSlot = fromData,
+		fromType = fromInventory.type,
+		toInventory = 'newdrop',
+		toSlot = data.toSlot,
+		toType = 'drop',
+		count = data.count,
+        action = 'move',
+        dropId = dropId,
+	})
+
+    if not hooks.success then return end
+    if Inventories[fromInventory.id] ~= fromInventory then hooks.success = false return end
 
     fromData.count -= data.count
     fromData.weight = Inventory.SlotWeight(Items(fromData.name), fromData)
@@ -1791,8 +1816,10 @@ local function dropItem(source, fromInventory, fromData, data)
     Inventory.Drops[dropId] = { coords = inventory.coords, instance = data.instance }
     fromInventory.changed = true
 
-    TriggerClientEvent('ox_inventory:createDrop', -1, dropId, Inventory.Drops[dropId], fromInventory.open and source,
-        slot)
+    local playerInv = Inventory(source)
+
+    TriggerClientEvent('ox_inventory:createDrop', -1, dropId, Inventory.Drops[dropId],
+        playerInv and playerInv.open and source, slot)
 
     if server.loglevel > 0 then
         lib.logger(fromInventory.owner, 'swapSlots',
@@ -1855,7 +1882,7 @@ local function resolveInventoryForSwap(playerInventory, invType, requestedId)
         local dropData = Inventory.Drops[inventory.id]
 
         if dropData and dropData.coords and playerInventory.player and playerInventory.player.ped then
-            local coords = GetEntityCoords(playerInventory.player.ped)
+            local coords = GetEntityCoords(GetPlayerPed(playerInventory.id))
             local maxDistance = (dropData.distance or 2.5) + 2.0
 
             if #(coords - dropData.coords) > maxDistance then
@@ -1869,11 +1896,22 @@ local function resolveInventoryForSwap(playerInventory, invType, requestedId)
     return inventory
 end
 
-local activeSlots = {}
+local playerSideTypes = {
+    player = true,
+    utility = true,
+    backpack = true,
+}
+
+local GetLocks = require 'modules.locks'
 
 ---@param source number
 ---@param data SwapSlotData
 lib.callback.register('ox_inventory:swapItems', function(source, data)
+    if data.fromInventory ~= data.toInventory and not playerSideTypes[data.fromType] and not playerSideTypes[data.toType] then
+        Utils.LogExploit(source, 'swapItems', 'Triggered event with invalid data')
+        return
+    end
+
     if data.count < 1 then return end
 
     local playerInventory = Inventory(source)
@@ -1890,10 +1928,12 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
 
     if data.toType == 'inspect' or data.fromType == 'inspect' then return end
 
-    local fromRef = ('%s:%s'):format(fromInventory.id, data.fromSlot)
-    local toRef = ('%s:%s'):format(toInventory.id, data.toSlot)
+    local activeSlots <close> = GetLocks({
+        ('inventory-%s:slot-%s'):format(fromInventory.id, data.fromSlot),
+        ('inventory-%s:slot-%s'):format(toInventory.id, data.toSlot)
+    })
 
-    if activeSlots[fromRef] or activeSlots[toRef] then
+    if not activeSlots then
         return false, {
             {
                 item = toInventory.items[data.toSlot] or { slot = data.toSlot },
@@ -1904,6 +1944,13 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
                 inventory = fromInventory.id
             }
         }
+    end
+    
+    ---@return boolean
+    local function partiesPresent()
+        return Inventories[playerInventory.id] == playerInventory
+            and Inventories[fromInventory.id] == fromInventory
+            and Inventories[toInventory.id] == toInventory
     end
 
     local sameInventory = fromInventory.id == toInventory.id
@@ -1918,14 +1965,6 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
             return false, 'evidence_cannot_take'
         end
     end
-
-    activeSlots[fromRef] = true
-    activeSlots[toRef] = true
-
-    local _ <close> = defer(function()
-        activeSlots[fromRef] = nil
-        activeSlots[toRef] = nil
-    end)
 
     if toInventory and (data.toType == 'newdrop' or fromInventory ~= toInventory or data.fromSlot ~= data.toSlot) then
         local fromData = fromInventory.items[data.fromSlot]
@@ -1987,7 +2026,10 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
 
                 if not sameInventory then
                     if (toWeight <= toInventory.maxWeight and fromWeight <= fromInventory.maxWeight) then
-                        if not TriggerEventHooks('swapItems', hookPayload) then return end
+                        local hooks <close> = TriggerEventHooks('swapItems', hookPayload)
+                        
+                        if not hooks.success then return end
+						if not partiesPresent() then hooks.success = false return end
 
                         if containerItem then
                             local toContainer = toInventory.type == 'container'
@@ -2029,28 +2071,32 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
                         return false, 'cannot_carry'
                     end
                 else
-                    if not TriggerEventHooks('swapItems', hookPayload) then return end
+                    local hooks <close> = TriggerEventHooks('swapItems', hookPayload)
+                    
+                    if not hooks.success then return end
+					if not partiesPresent() then hooks.success = false return end
 
                     toData, fromData = Inventory.SwapSlots(fromInventory, toInventory, data.fromSlot, data.toSlot)
                 end
             elseif toData and toData.name == fromData.name and matchesExcludingDurability(toData.metadata, fromData.metadata) then
                 -- Stack items
-                toData.count += data.count
-                fromData.count -= data.count
-                local toSlotWeight = Inventory.SlotWeight(Items(toData.name), toData)
+                local fromCount = fromData.count - data.count
+                local toCount = toData.count + data.count
+                local toSlotWeight = Inventory.SlotWeight(Items(toData.name), { count = toCount, metadata = toData.metadata })
                 local totalWeight = toInventory.weight - toData.weight + toSlotWeight
 
                 if fromInventory.type == 'container' or sameInventory or totalWeight <= toInventory.maxWeight then
                     hookPayload.action = 'stack'
 
-                    if not TriggerEventHooks('swapItems', hookPayload) then
-                        toData.count -= data.count
-                        fromData.count += data.count
-                        return
-                    end
+                    local hooks <close> = TriggerEventHooks('swapItems', hookPayload)
+
+                    if not hooks.success then return end
+                    if not partiesPresent() then hooks.success = false return end
+
+                    fromData.count, toData.count = fromCount, toCount
+                    toData.weight = toSlotWeight
 
                     local fromSlotWeight = Inventory.SlotWeight(Items(fromData.name), fromData)
-                    toData.weight = toSlotWeight
 
                     if not sameInventory then
                         fromInventory.weight = fromInventory.weight - fromData.weight + fromSlotWeight
@@ -2080,8 +2126,6 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
 
                     fromData.weight = fromSlotWeight
                 else
-                    toData.count -= data.count
-                    fromData.count += data.count
                     return false, 'cannot_carry'
                 end
             elseif data.count <= fromData.count then
@@ -2094,7 +2138,10 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
                 if fromInventory.type == 'container' or sameInventory or (toInventory.weight + toData.weight <= toInventory.maxWeight) then
                     hookPayload.action = 'move'
 
-                    if not TriggerEventHooks('swapItems', hookPayload) then return end
+                    local hooks <close> = TriggerEventHooks('swapItems', hookPayload)
+                    
+                    if not hooks.success then return end
+					if not partiesPresent() then hooks.success = false return end
 
                     if not sameInventory then
                         local toContainer = toInventory.type == 'container'
@@ -2711,7 +2758,7 @@ local function giveItem(playerId, slot, target, count)
 
     if not fromInventory or not toInventory then return end
 
-    if type(count) ~= 'number' or count <= 0 then count = 1 end
+    count = math.max(1, math.floor(count or 1))
 
     if toInventory.player then
         local data = fromInventory.items[slot]
@@ -2726,50 +2773,54 @@ local function giveItem(playerId, slot, target, count)
 
         local item = Items(data.name)
 
-        if not item or data.count < count or not Inventory.CanCarryItem(toInventory, item, count, data.metadata) or #(GetEntityCoords(fromInventory.player.ped) - GetEntityCoords(toInventory.player.ped)) > 15 then
-            return { 'cannot_give', count, data.label }
-        end
+		if not item or data.count < count or not Inventory.CanCarryItem(toInventory, item, count, data.metadata) or #(GetEntityCoords(fromInventory.player.ped) - GetEntityCoords(toInventory.player.ped)) > 15 then
+			return { 'cannot_give', count, data.label }
+		end
 
         local toSlot = Inventory.GetSlotForItem(toInventory, data.name, data.metadata)
-        local fromRef = ('%s:%s'):format(fromInventory.id, slot)
-        local toRef = ('%s:%s'):format(toInventory.id, toSlot)
 
-        if activeSlots[fromRef] or activeSlots[toRef] then
+        if not toSlot then return { 'cannot_give', count, data.label } end
+
+        local activeSlots <close> = GetLocks({
+            ('inventory-%s:slot-%s'):format(fromInventory.id, slot),
+            ('inventory-%s:slot-%s'):format(toInventory.id, toSlot)
+        })
+
+        if not activeSlots then 
             return { 'cannot_give', count, data.label }
         end
-
-        activeSlots[fromRef] = true
-        activeSlots[toRef] = true
-
-        local _ <close> = defer(function()
-            activeSlots[fromRef] = nil
-            activeSlots[toRef] = nil
-        end)
-
-        if TriggerEventHooks('swapItems', {
-                source = fromInventory.id,
-                fromInventory = fromInventory.id,
-                fromType = fromInventory.type,
-                toInventory = toInventory.id,
-                toType = toInventory.type,
-                count = count,
-                action = 'give',
-                fromSlot = data,
-            }) then
-            ---@todo manually call swapItems or something?
-            if Inventory.AddItem(toInventory, item, count, data.metadata, toSlot) then
-                if Inventory.RemoveItem(fromInventory, item, count, data.metadata, slot) then
-                    if server.loglevel > 0 then
-                        lib.logger(fromInventory.owner, 'giveItem',
-                            ('"%s" gave %sx %s to "%s"'):format(fromInventory.label, count, data.name, toInventory.label))
-                    end
-
-                    return
-                else
-                    Inventory.RemoveItem(toInventory, item, count, data.metadata, toSlot)
-                end
+        
+        local hooks <close> = TriggerEventHooks('swapItems', {
+			source = fromInventory.id,
+			fromInventory = fromInventory.id,
+			fromType = fromInventory.type,
+			toInventory = toInventory.id,
+			toType = toInventory.type,
+			count = count,
+			action = 'give',
+			fromSlot = data,
+		})
+        
+		if hooks.success then
+            if Inventories[fromInventory.id] ~= fromInventory or Inventories[toInventory.id] ~= toInventory then
+                hooks.success = false
+                return { 'cannot_give', count, data.label }
             end
-        end
+
+			if Inventory.AddItem(toInventory, item, count, data.metadata, toSlot) then
+				if Inventory.RemoveItem(fromInventory, item, count, data.metadata, slot) then
+					if server.loglevel > 0 then
+						lib.logger(fromInventory.owner, 'giveItem', ('"%s" gave %sx %s to "%s"'):format(fromInventory.label, count, data.name, toInventory.label))
+					end
+
+					return
+				else
+					hooks.success = false
+
+					Inventory.RemoveItem(toInventory, item, count, data.metadata, toSlot)
+				end
+			end
+		end
 
         return { 'cannot_give', count, data.label }
     end
