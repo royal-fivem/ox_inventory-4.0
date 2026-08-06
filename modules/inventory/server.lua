@@ -1841,7 +1841,6 @@ local function dropItem(source, fromInventory, fromData, data)
 end
 
 local function resolveInventoryForSwap(playerInventory, invType, requestedId)
-    print(('resolve: type=%s requestedId=%s open=%s'):format(invType, requestedId or 'nil', playerInventory.open or 'nil'))
     if invType == 'utility' then invType = 'player' end
 
     if invType == 'backpack' then
@@ -1850,7 +1849,6 @@ local function resolveInventoryForSwap(playerInventory, invType, requestedId)
 
         local slotData = playerInventory.items[slotIndex]
         if not slotData or not slotData.metadata or not slotData.metadata.container then
-            print('resolve: FAIL backpack slot has no container')
             return
         end
 
@@ -1872,11 +1870,9 @@ local function resolveInventoryForSwap(playerInventory, invType, requestedId)
 
     if not inventory then return end
 
-    if not inventory then print('resolve: FAIL inventory nil') return end
-
     if inventory.type == 'container' then
         local slot = playerInventory.containerSlot
-        if not slot then print('resolve: FAIL no containerSlot') return end
+        if not slot then return end
 
         local slotData = playerInventory.items[slot]
         if not slotData or slotData.metadata.container ~= inventory.id then
@@ -1890,12 +1886,10 @@ local function resolveInventoryForSwap(playerInventory, invType, requestedId)
             local maxDistance = (dropData.distance or 2.5) + 2.0
 
             if #(coords - dropData.coords) > maxDistance then
-                print(('resolve: FAIL drop distance %.1f > %.1f'):format(#(coords - dropData.coords), maxDistance))
                 return
             end
         end
     elseif not inventory.openedBy[playerInventory.id] then
-        print(('resolve: FAIL not openedBy %s'):format(playerInventory.id))
         return
     end
 
@@ -1913,7 +1907,7 @@ local GetLocks = require 'modules.locks'
 ---@param source number
 ---@param data SwapSlotData
 lib.callback.register('ox_inventory:swapItems', function(source, data)
-    if not playerSideTypes[data.fromType] and not playerSideTypes[data.toType] then
+    if data.fromInventory ~= data.toInventory and not playerSideTypes[data.fromType] and not playerSideTypes[data.toType] then
         Utils.LogExploit(source, 'swapItems', 'Triggered event with invalid data')
         return
     end
