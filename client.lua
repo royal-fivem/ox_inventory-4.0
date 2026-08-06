@@ -1344,7 +1344,7 @@ RegisterNetEvent('ox_inventory:createDrop', function(dropId, data, owner, slot)
             currentWeapon = Weapon.Disarm(currentWeapon)
         end
 
-        if invOpen and #(GetEntityCoords(playerPed) - data.coords) <= 1 then
+        if invOpen and #(GetEntityCoords(playerPed) - data.coords) <= 1.0 then
             if not cache.vehicle then
                 client.openInventory('drop', dropId)
             else
@@ -1482,6 +1482,7 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
             close = v.close,
             count = 0,
             weight = v.weight,
+            rarity = v.rarity,
             description = v.description,
             buttons = buttons,
             ammoName = v.ammoname,

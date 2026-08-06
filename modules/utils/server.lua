@@ -47,4 +47,19 @@ if webHook ~= '' then
 	end
 end
 
+---@param playerId number
+---@param event string
+---@param msg string
+---@param kickPlayer? boolean
+function Utils.LogExploit(playerId, event, msg, kickPlayer)
+    local warning = ('%s (%s) suspected of exploiting. %s'):format(GetPlayerName(playerId), playerId, msg)
+
+    lib.print.warn(warning)
+    lib.logger(playerId, ('%s:%s'):format(shared.resource, event), msg)
+
+    if kickPlayer then
+        DropPlayer(tostring(playerId), 'Dropped for suspicious behaviour.')
+    end
+end
+
 return Utils

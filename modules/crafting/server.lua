@@ -165,6 +165,7 @@ lib.callback.register('ox_inventory:openCraftingBench', function(source, id, ind
 end)
 
 local TriggerEventHooks = require 'modules.hooks.server'
+local GetLocks = require 'modules.locks'
 
 lib.callback.register('ox_inventory:craftItem', function(source, id, index, recipeId, toSlot)
     local left, bench = Inventory(source), CraftingBenches[id]
@@ -268,16 +269,26 @@ lib.callback.register('ox_inventory:craftItem', function(source, id, index, reci
                 end
             end
 
-            if not TriggerEventHooks('craftItem', {
-                    source = source,
-                    benchId = id,
-                    benchIndex = index,
-                    recipe = recipe,
-                    toInventory = left.id,
-                    toSlot = toSlot,
-                }) then
-                return false
+            local lockIds = {}
+
+            for slot in pairs(tbl) do
+                lockIds[#lockIds + 1] = ('inventory-%s:slot-%s'):format(left.id, slot)
             end
+
+            local activeSlots <close> = GetLocks(lockIds)
+
+            if not activeSlots then return end
+            
+            local hooks <close> = TriggerEventHooks('craftItem', {
+				source = source,
+				benchId = id,
+				benchIndex = index,
+				recipe = recipe,
+				toInventory = left.id,
+				toSlot = toSlot,
+			})
+
+            if not hooks.success then return false end
 
             local success = lib.callback.await('ox_inventory:startCrafting', source, id, recipeId)
 
@@ -306,7 +317,7 @@ lib.callback.register('ox_inventory:craftItem', function(source, id, index, reci
                             local emptySlot = Inventory.GetEmptySlot(left)
 
                             if emptySlot then
-                                local newItem = Inventory.SetSlot(left, item, 1, table.deepclone(invSlot.metadata),
+                                local ok, newItem = Inventory.SetSlot(left, item, 1, table.deepclone(invSlot.metadata),
                                     emptySlot)
 
                                 if newItem then
@@ -342,7 +353,7 @@ lib.callback.register('ox_inventory:craftItem', function(source, id, index, reci
                 end
 
                 if targetSlot then
-                    local newItem = Inventory.SetSlot(left, craftedItem, craftCount, recipe.metadata or {}, targetSlot)
+                    local ok, newItem = Inventory.SetSlot(left, craftedItem, craftCount, recipe.metadata or {}, targetSlot)
 
                     if newItem then
                         left:syncSlotsWithClients({
@@ -364,6 +375,10 @@ end)
 
 -- Helper function to execute a single craft
 local function executeCraft(source, benchId, craftingInvName, recipe, quantity)
+    local activeSlots <close> = GetLocks({ ('inventory-%s'):format(craftingInvName) })
+
+    if not activeSlots then return false, 'busy' end
+
     local craftingInventory = Inventory(craftingInvName)
     if not craftingInventory then return false, 'crafting_inventory_not_found' end
 
