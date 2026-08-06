@@ -480,6 +480,7 @@ input[type='number']::-webkit-outer-spin-button {
   align-items: flex-start;
   height: 100%;
   width: 100%;
+  max-width: calc(100vh * 16 / 9);
   box-sizing: border-box;
   background-color: rgba(10, 10, 15, 0.85);
 }
