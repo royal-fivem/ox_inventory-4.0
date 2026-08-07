@@ -383,7 +383,7 @@ input[type='number']::-webkit-outer-spin-button {
   font-weight: 600;
   font-size: 1.5vh;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.95);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .character-info-id {
@@ -399,16 +399,6 @@ input[type='number']::-webkit-outer-spin-button {
     color: rgba(255, 255, 255, 0.45);
   }
 }
-
-// .utils-inventory {
-//   transform: perspective(1000px)  skewX(0deg) rotateY(-10deg) rotateX(0deg);
-//   transform-origin: center;
-// }
-
-// .right-inventory {
-//   transform: perspective(1000px)  skewX(0deg) rotateY(-10deg) rotateX(0deg);
-//   transform-origin: center;
-// }
 
 .tooltip-description {
   border-radius: 4px;
@@ -702,10 +692,10 @@ input[type='number']::-webkit-outer-spin-button {
   gap: 0.4vh;
   font-size: 1.3vh;
   font-weight: 600;
-  color: rgb(162, 202, 49);
+  color: rgba(255, 255, 255, 0.95);
 
   i {
-    color: rgb(162, 202, 49);
+    color: rgba(255, 255, 255, 0.95);
   }
 }
 
@@ -3770,6 +3760,57 @@ $xpGreenDim: rgba(162, 202, 49, 0.55);
   align-items: center;
   gap: 0.9vh;
 }
+
+.inv-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5vh;
+}
+
+.inv-search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1.2vh;
+  cursor: pointer;
+  transition: color 120ms ease;
+
+  &:hover {
+    color: #fff;
+  }
+}
+
+.inv-search.open .inv-search-btn {
+  color: $switchGreen;
+}
+
+.inv-search-input {
+  width: 0;
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid transparent;
+  background: transparent;
+  color: #fff;
+  font-family: $mainFont;
+  font-size: 1.1vh;
+  outline: none;
+  opacity: 0;
+  pointer-events: none;
+  // Animate width, not display — the header must not reflow abruptly.
+  transition: width 180ms ease, opacity 180ms ease;
+}
+
+.inv-search.open .inv-search-input {
+  width: 12vh;
+  opacity: 1;
+  pointer-events: auto;
+  border-bottom-color: rgba(255, 255, 255, 0.25);
+}
+
 
 .inv-settings-buttons {
   display: flex;

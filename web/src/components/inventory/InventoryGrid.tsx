@@ -4,8 +4,9 @@ import { Inventory, InventoryType, Slot } from '../../typings';
 import WeightBar from '../utils/WeightBar';
 import InventorySlot from './InventorySlot';
 import InventorySettingsButtons from './InventorySettingsButtons';
-import { getTotalWeight } from '../../helpers';
+import { getTotalWeight, isSlotWithItem } from '../../helpers';
 import { useAppSelector } from '../../store';
+import { Items } from '../../store/items';
 import { useIntersection } from '../../hooks/useIntersection';
 import { toAsciiLower } from '../../utils/string';
 import CharacterInfo from './CharacterInfo';
@@ -22,6 +23,8 @@ interface InventoryGridProps {
   onCtrlClick?: (item: ShopItem) => void; // Add onCtrlClick prop
   collapsible?: boolean;
   defaultCollapsed?: boolean;
+  searchQuery?: string;
+  onSearchChange?: (value: string) => void;
   money?: number;
   pocketMoney?: number;
   backpackMoney?: number;
@@ -46,6 +49,8 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
   onCtrlClick, // Destructure new prop
   collapsible,
   defaultCollapsed,
+  searchQuery,
+  onSearchChange,
   money,
   pocketMoney,
   backpackMoney,
@@ -58,7 +63,7 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
     [inventory.maxWeight, inventory.items]
   );
   const [page, setPage] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed ?? false);
   const [contentHeight, setContentHeight] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -69,6 +74,10 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
   const displayMoney = useTransform(springMoney, (v) => Math.round(v).toLocaleString('en-us'));
   const [showMoneyBreakdown, setShowMoneyBreakdown] = useState(false);
   const breakdownTimer = useRef<number>();
+  
+  useEffect(() => {
+    if (searchQuery) setIsCollapsed(false);
+  }, [searchQuery]);
 
   useEffect(() => {
     moneyValue.set(money ?? 0);
@@ -116,7 +125,7 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
     );
   }, [slotsToShow, inventory.type, page]);  
 
-  const normalizedQuery = toAsciiLower(searchQuery);
+  const normalizedQuery = toAsciiLower(searchQuery ?? '');
 
   const usedSlots = useMemo(
     () => inventory.items.filter((i) => i && i.name).length,
@@ -149,7 +158,8 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
       style={{ paddingRight: '8px' }}
     >
       {paginatedItems.map((item, index) => {
-        const matches = toAsciiLower(item?.name ?? '').includes(normalizedQuery);
+        const label = toAsciiLower(isSlotWithItem(item) ? (item.metadata?.label ?? item.label ?? Items[item.name]?.label ?? '') : '');
+        const matches = toAsciiLower(item?.name ?? '').includes(normalizedQuery) || label.includes(normalizedQuery);
         return (
           <InventorySlot
             key={`${inventory.type}-${inventory.id}-${item.slot}`}
@@ -238,20 +248,6 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
               )}
             </div>
             
-            {/* <div className="inventory-grid-header-title">
-              <h1>{headerTitle}</h1>
-              
-              {inventory.type === InventoryType.PLAYER && (
-                <>
-                  <CharacterInfo />
-
-                  <span className="inventory-grid-money">
-                    <i className="fa-solid fa-money-bill"></i> $<motion.span>{displayMoney}</motion.span>
-                  </span>
-                </>
-              )}
-            </div> */}
-
             {collapsible && (
               <span
                 className={`inventory-collapse-arrow ${isCollapsed ? 'down' : 'up'}`}
@@ -269,6 +265,39 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
                   </p>
                 )}
                 <div className="inventory-grid-header-right">
+                  {onSearchChange && (
+                  <div className={`inv-search ${searchOpen ? 'open' : ''}`}>
+                      <button
+                        type="button"
+                        className="inv-search-btn"
+                        title="Search items"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSearchOpen((prev) => {
+                            if (prev) onSearchChange?.('');
+                            return !prev;
+                          });
+                        }}
+                      >
+                        <i className="fa-solid fa-magnifying-glass"></i>
+                      </button>
+
+                      <input
+                        className="inv-search-input"
+                        value={searchQuery ?? ''}
+                        placeholder="Search"
+                        onChange={(e) => onSearchChange?.(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                          e.stopPropagation();
+                          if (e.key === 'Escape') {
+                            onSearchChange?.('');
+                            setSearchOpen(false);
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
                   <InventorySettingsButtons />
                   {inventory.slots !== undefined && (
                     <p className="inventory-grid-slotcount">

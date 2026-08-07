@@ -24,7 +24,6 @@ import CraftingPage from '../crafting/CraftingPage';
 import HealthPage from '../health/HealthPage';
 import HealthFigure from '../health/HealthFigure';
 import { useHealthData } from '../health/useHealthData';
-import { CachedCharacterInfo } from './CharacterInfo';
 
 const HEALTH_INDEX = 1;
 const CRAFTING_INDEX = 2;
@@ -38,6 +37,7 @@ const Inventory: React.FC = () => {
   const isShop = rightInventory?.type === 'shop';
   const healthData = useHealthData(inventoryVisible);
   const [hasExperience, setHasExperience] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     if (!inventoryVisible) return;
@@ -52,10 +52,10 @@ const Inventory: React.FC = () => {
       .catch(() => setHasExperience(false));
   }, [inventoryVisible]);
 
-  fetchNui<{ name?: string; id?: string | number }>('getCharacterInfo')
-    .then((res) => res && CachedCharacterInfo(res))
-    .catch(() => {});
-  
+  useEffect(() => {
+    if (!inventoryVisible) setSearchQuery('');
+  }, [inventoryVisible]);
+
   useNuiEvent<unknown[]>('setExperience', (data) => {
     setHasExperience(Array.isArray(data) && data.length > 0);
   });
@@ -121,7 +121,7 @@ const Inventory: React.FC = () => {
 
           {isShop ? (
             <>
-              <LeftInventory />
+              <LeftInventory searchQuery={searchQuery} onSearchChange={setSearchQuery} />
               <ShopPage />
               <Tooltip />
               <InventoryContext />
@@ -130,7 +130,7 @@ const Inventory: React.FC = () => {
             <ExperiencePage visible={inventoryVisible && activeIndex === EXPERIENCE_INDEX} />
           ) : activeIndex === HEALTH_INDEX ? (
             <>
-              <LeftInventory />
+              <LeftInventory searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
               <HealthFigure injuries={healthData.injuries} />
 
@@ -146,7 +146,7 @@ const Inventory: React.FC = () => {
             </>
           ) : activeIndex === CRAFTING_INDEX ? (
             <>
-              <LeftInventory />
+              <LeftInventory searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
               {/* Crafting page replaces the right inventory with the workbench + codex */}
               <CraftingPage visible={inventoryVisible && activeIndex === CRAFTING_INDEX} />
@@ -156,9 +156,9 @@ const Inventory: React.FC = () => {
             </>
           ) : (
             <>
-              <LeftInventory />
+              <LeftInventory searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
-              <InventoryUtils injuries={healthData.injuries}/>
+              <InventoryUtils injuries={healthData.injuries} searchQuery={searchQuery} />
 
               <div className="right-inventory-column" style={{ display: 'flex', flexDirection: 'column', gap: '1vh', height: '100vh', overflowY: 'auto', overflowX: 'hidden' }}>
                 <RightInventory />

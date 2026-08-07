@@ -9,10 +9,7 @@ interface CharacterData {
 }
 
 let cachedInfo: CharacterData | null = null;
-
-export const CachedCharacterInfo = (info: CharacterData) => {
-  cachedInfo = info;
-}
+const hasInfo = (i?: CharacterData | null) => !!i && (!!i.name || i.id !== undefined);
 
 const CharacterInfo: React.FC = () => {
   const [data, setData] = useState<CharacterData>(cachedInfo ?? {});
@@ -24,11 +21,11 @@ const CharacterInfo: React.FC = () => {
 
 
   useEffect(() => {
-    if (isEnvBrowser() || cachedInfo) return;
+    if (isEnvBrowser() || hasInfo(cachedInfo)) return;
 
     fetchNui<CharacterData>('getCharacterInfo')
       .then((res) => {
-        if (!res) return;
+        if (!hasInfo(res)) return;
         cachedInfo = res;
         setData(res);
       })

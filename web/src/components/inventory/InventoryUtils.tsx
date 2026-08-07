@@ -3,6 +3,8 @@ import { useAppDispatch, useAppSelector } from '../../store';
 import { selectContainerInventory, selectLeftInventory, setupInventory } from '../../store/inventory';
 import InventorySlot from './InventorySlot';
 import { getItemUrl, isSlotWithItem } from '../../helpers';
+import { Items } from '../../store/items';
+import { toAsciiLower } from '../../utils/string';
 import { fetchNui } from '../../utils/fetchNui';
 import { isEnvBrowser } from '../../utils/misc';
 import BodyFigure from '../health/BodyFigure';
@@ -44,14 +46,16 @@ const hotkeySlotConfigs: SlotConfig[] = [
 interface InventoryUtilsProps {
     figureOnly?: boolean;
     injuries?: Injury[];
+    searchQuery?: string;
 }
 
-const InventoryUtils: React.FC<InventoryUtilsProps> = ({ figureOnly = false, injuries }) => {
+const InventoryUtils: React.FC<InventoryUtilsProps> = ({ figureOnly = false, injuries, searchQuery }) => {
     const { items, id, type, groups } = useAppSelector(selectLeftInventory);
     const containerInventory = useAppSelector(selectContainerInventory);
     const [phoneKey, setPhoneKey] = useState<string>('M');
     const [phoneItems, setPhoneItems] = useState<any[]>(isEnvBrowser() ? MOCK_SIMS : []);
     const dispatch = useAppDispatch();
+    const normalizedQuery = toAsciiLower(searchQuery ?? '');
 
     const phoneOpen = containerInventory?.label === 'Phone';
     const simItems: any[] = phoneOpen ? containerInventory!.items : phoneItems;
@@ -141,12 +145,19 @@ const InventoryUtils: React.FC<InventoryUtilsProps> = ({ figureOnly = false, inj
     const renderSlot = ({ slot, label, showPhoneKey }: SlotConfig) => {
         const slotItem = items.find((item) => item.slot === slot) || { slot };
         const hasItem = isSlotWithItem(slotItem);
+
+        const searchName = hasItem ? toAsciiLower(slotItem.name) : '';
+        const searchLabel = hasItem
+            ? toAsciiLower(slotItem.metadata?.label ?? slotItem.label ?? Items[slotItem.name]?.label ?? '')
+        : '';
+        const matches = !normalizedQuery || searchName.includes(normalizedQuery) || searchLabel.includes(normalizedQuery);
+
         const isPhoneSlot = showPhoneKey && hasItem && slot === 8;
 
         const isPhone = slot === PHONE_SLOT;
 
         return (
-            <div className={`utility-slot-group ${isPhone ? 'phone-group' : ''}`} key={`utility-slot-${slot}`}>
+            <div className={`utility-slot-group ${isPhone ? 'phone-group' : ''}`} key={`utility-slot-${slot}`} style={{ opacity: matches ? 1 : 0.25, transition: 'opacity 0.2s ease' }}>
                 {label && <div className="utility-slot-label">{label}</div>}
                 <div className="phone-slot-row">
                     <div className="utility-slot-wrapper">

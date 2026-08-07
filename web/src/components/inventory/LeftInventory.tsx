@@ -1,12 +1,17 @@
+import React, { useMemo } from 'react';
 import InventoryGrid from './InventoryGrid';
 import { useAppSelector } from '../../store';
 import { Items } from '../../store/items';
 import { selectLeftInventory, selectBackpackInventory, selectRightInventory, selectCraftingInventory } from '../../store/inventory';
-import React, { useMemo } from 'react';
 import { isSlotWithItem } from '../../helpers';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const LeftInventory: React.FC = () => {
+interface LeftInventoryProps {
+  searchQuery?: string;
+  onSearchChange?: (value: string) => void;
+}
+
+const LeftInventory: React.FC<LeftInventoryProps> = ({ searchQuery = '', onSearchChange }) => {
   const leftInventory = useAppSelector(selectLeftInventory);
   const backpackInventory = useAppSelector(selectBackpackInventory);
   const rightInventory = useAppSelector(selectRightInventory);
@@ -61,6 +66,8 @@ const LeftInventory: React.FC = () => {
             money={totalMoney}
             pocketMoney={money}
             backpackMoney={backpackMoney}
+            searchQuery={searchQuery}
+            onSearchChange={onSearchChange}
           />
           {shouldShowBackpack && (
             <div style={{ marginTop: '1vh' }}>
@@ -68,7 +75,8 @@ const LeftInventory: React.FC = () => {
                 inventory={backpackPanel}
                 hideHeader={false}
                 collapsible
-                // defaultCollapsed
+                defaultCollapsed={!searchQuery}
+                searchQuery={searchQuery}
               />
             </div>
           )}
