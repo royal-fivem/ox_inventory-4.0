@@ -189,7 +189,7 @@ export const ItemNotificationsProvider = ({ children }: { children: React.ReactN
 
   useNuiEvent<[item: SlotWithItem, text: string, count?: number]>('itemNotify', ([item, text, count]) => {
     const tone: NotifyTone = text === 'ui_added' ? 'added' : text === 'ui_removed' ? 'removed' : 'neutral';
-    add({ item, count, tone, action: (Locale[text] as string) ?? text });
+    add({ item, count, tone, action: Locale(text, text) });
   });
 
   const current = batches[0];

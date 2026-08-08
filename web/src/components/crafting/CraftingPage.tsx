@@ -6,13 +6,14 @@ import { store, useAppDispatch, useAppSelector } from '../../store';
 import { refreshSlots, selectLeftInventory, selectBackpackInventory } from '../../store/inventory';
 import { InventoryType, DragSource } from '../../typings';
 import { CraftCategory, CraftingConfig, CraftRecipe, PlacedCell } from './types';
-import { DEFAULT_CATEGORIES } from './config';
+import { getDefaultCategories } from './config';
 import { MOCK_CRAFTING } from './mock';
 import { buildGrid, canCarryResult, canCraftRecipe } from './craftingHelpers';
 import CraftingCodex from './CraftingCodex';
 import CraftingBench from './CraftingBench';
 import CraftingQueue from './CraftingQueue';
 import { QUEUE_SLOTS, useCraftingQueue } from './CraftingQueueContext';
+import { Locale } from '../../store/locale';
 
 interface Props {
   visible: boolean;
@@ -91,7 +92,9 @@ const CraftingPage: React.FC<Props> = ({ visible }) => {
     [leftInventory, backpackInventory]
   );
 
-  const categories: CraftCategory[] = config.categories.length ? config.categories : DEFAULT_CATEGORIES;
+  const categories: CraftCategory[] = config.categories.length
+    ? config.categories
+    : getDefaultCategories();
 
   // -------- item reservation (client-side) --------
   // reserve one unit of an inventory slot into the bench
@@ -277,7 +280,7 @@ const CraftingPage: React.FC<Props> = ({ visible }) => {
       const matched = matchRecipe(config.recipes, items);
       if (matched) {
         if (!canCarryResult(matched)) {
-          showError('Cannot carry');
+          showError(Locale('ui_cannot_carry', 'Cannot carry'));
           return;
         }
         
@@ -301,7 +304,7 @@ const CraftingPage: React.FC<Props> = ({ visible }) => {
           } else {
             cells.forEach((c) => restoreCell(c)); // no match — hand items back
             clearBench();
-            showError('No Recipe');
+            showError(Locale('ui_no_recipe', 'No Recipe'));
           }
         })
         .catch(() => {
@@ -315,7 +318,7 @@ const CraftingPage: React.FC<Props> = ({ visible }) => {
     if (!selected || !isCraftable(selected)) return;
 
     if (!canCarryResult(selected)) {
-      showError('Cannot carry');
+      showError(Locale('ui_cannot_carry', 'Cannot carry'));
       return;
     }
 
@@ -325,10 +328,10 @@ const CraftingPage: React.FC<Props> = ({ visible }) => {
   const combineLabel = error
     ? error
     : manualMode
-    ? 'Combine'
+    ? Locale('ui_combine', 'Combine')
     : selected && !isCraftable(selected)
-    ? 'Missing Materials'
-    : 'Combine';
+    ? Locale('ui_missing_materials', 'Missing Materials')
+    : Locale('ui_combine', 'Combine');
   const combineDisabled = error ? true : manualMode ? false : !(selected && isCraftable(selected));
 
   return (

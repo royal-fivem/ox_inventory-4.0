@@ -21,10 +21,8 @@ const withAlpha = (color: string | undefined, alpha: number) => {
 };
 
 type EvidenceKey = 'blood' | 'casing';
-const EVIDENCE_LABELS: Record<EvidenceKey, string> = {
-  blood: 'Blod',
-  casing: 'Patronhylster',
-};
+const evidenceLabel = (key: EvidenceKey) =>
+  key === 'blood' ? Locale('ui_evidence_blood', 'Blood') : Locale('ui_evidence_casing', 'Casing');
 
 interface DataProps {
   action: string;
@@ -92,18 +90,18 @@ const InventoryContext: React.FC<InventoryContextProps> = () => {
   // (id-cards, evidence, weapon serials/attachments, custom fields, ...)
   const metaRows: { label: string; value: React.ReactNode }[] = [];
   if (item) {
-    if (meta.firstname !== undefined) metaRows.push({ label: 'First Name', value: meta.firstname });
-    if (meta.lastname !== undefined) metaRows.push({ label: 'Last Name', value: meta.lastname });
-    if (meta.citizenid !== undefined) metaRows.push({ label: 'State ID', value: meta.citizenid });
-    if (meta.birthday !== undefined) metaRows.push({ label: 'Birthday', value: meta.birthday });
-    if (meta.ammo !== undefined) metaRows.push({ label: 'Ammunition', value: `${meta.ammo}${ammoName ? ` — ${ammoName}` : ''}` });
-    if (meta.serial) metaRows.push({ label: 'Serial Number', value: meta.serial });
-    if (meta.evidencetype) metaRows.push({ label: 'Evidence Type', value: EVIDENCE_LABELS[meta.evidencetype as EvidenceKey] ?? meta.evidencetype });
-    if (meta.evidenceId) metaRows.push({ label: 'Evidence Number', value: meta.evidenceId });
-    if (meta.weapontint) metaRows.push({ label: 'Skin', value: meta.weapontint });
+    if (meta.firstname !== undefined) metaRows.push({ label: Locale('ui_firstname', 'First Name'), value: meta.firstname });
+    if (meta.lastname !== undefined) metaRows.push({ label: Locale('ui_lastname', 'Last Name'), value: meta.lastname });
+    if (meta.citizenid !== undefined) metaRows.push({ label: Locale('ui_stateid', 'State ID'), value: meta.citizenid });
+    if (meta.birthday !== undefined) metaRows.push({ label: Locale('ui_birthday', 'Birthday'), value: meta.birthday });
+    if (meta.ammo !== undefined) metaRows.push({ label: Locale('ui_ammo', 'Ammunition'), value: `${meta.ammo}${ammoName ? ` — ${ammoName}` : ''}` });
+    if (meta.serial) metaRows.push({ label: Locale('ui_serial', 'Serial Number'), value: meta.serial });
+    if (meta.evidencetype) metaRows.push({ label: Locale('ui_evidence_type', 'Evidence Type'), value: evidenceLabel(meta.evidencetype as EvidenceKey) ?? meta.evidencetype });
+    if (meta.evidenceId) metaRows.push({ label: Locale('ui_evidence_number', 'Evidence Number'), value: meta.evidenceId });
+    if (meta.weapontint) metaRows.push({ label: Locale('ui_skin', 'Skin'), value: meta.weapontint });
     if (meta.components && meta.components[0]) {
       metaRows.push({
-        label: 'Attachments',
+        label: Locale('ui_components', 'Attachments'),
         value: meta.components.map((c: string) => Items[c]?.label || c).join(', '),
       });
     }
@@ -181,7 +179,7 @@ const InventoryContext: React.FC<InventoryContextProps> = () => {
             <div className="context-item-divider" />
 
             <div className="context-item-meta-row">
-              <span>{Locale.ui_rarity || 'Rarity'}</span>
+              <span>{Locale('ui_rarity', 'Rarity')}</span>
               <span className="context-item-meta-value" style={{ color: rarityColor }}>
                 {getRarityDisplayName(item.rarity).toUpperCase()}
               </span>
@@ -189,7 +187,7 @@ const InventoryContext: React.FC<InventoryContextProps> = () => {
 
             {durability !== undefined && (
               <div className="context-item-meta-row">
-                <span>{Locale.ui_durability || 'Durability'}</span>
+                <span>{Locale('ui_durability', 'Durability')}</span>
                 <span className="context-item-durability">{Math.floor(durability)}%</span>
               </div>
             )}
@@ -209,7 +207,7 @@ const InventoryContext: React.FC<InventoryContextProps> = () => {
       {/* split field: type the amount, then drag the item out to split it off */}
       {item && item.count > 1 && (
         <div className="context-split-row" onMouseDown={(e) => e.stopPropagation()}>
-          <span className="context-split-label">{Locale.ui_split || 'Split'}</span>
+          <span className="context-split-label">{Locale('ui_split', 'Split')}</span>
           <div className="context-split-field">
             <input
               type="number"
@@ -217,7 +215,7 @@ const InventoryContext: React.FC<InventoryContextProps> = () => {
               value={splitValue}
               min={1}
               max={total}
-              title="Type an amount, then drag the item to split it off"
+              title={Locale('ui_split_hint', 'Type an amount, then drag the item to split it off')}
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
               onChange={(e) => onSplitChange(e.target.value)}
@@ -228,20 +226,20 @@ const InventoryContext: React.FC<InventoryContextProps> = () => {
       )}
 
       {isWeaponInValidSlot && !isPhone && (
-        <MenuItem onClick={() => handleClick({ action: 'use' })} label={Locale.ui_use || 'Use'} />
+        <MenuItem onClick={() => handleClick({ action: 'use' })} label={Locale('ui_use', 'Use')} />
       )}
-      <MenuItem onClick={() => handleClick({ action: 'give' })} label={Locale.ui_give || 'Give'} />
+      <MenuItem onClick={() => handleClick({ action: 'give' })} label={Locale('ui_give', 'Give')} />
 
       {item && item.metadata?.ammo > 0 && (
-        <MenuItem onClick={() => handleClick({ action: 'removeAmmo' })} label={Locale.ui_remove_ammo} />
+        <MenuItem onClick={() => handleClick({ action: 'removeAmmo' })} label={Locale('ui_remove_ammo', 'Remove ammo')} />
       )}
 
       {item && item.metadata?.serial && (
-        <MenuItem onClick={() => handleClick({ action: 'copy', serial: item?.metadata?.serial })} label={Locale.ui_copy} />
+        <MenuItem onClick={() => handleClick({ action: 'copy', serial: item?.metadata?.serial })} label={Locale('ui_copy', 'Copy serial number')} />
       )}
 
       {item && item.metadata?.components?.length > 0 && (
-        <Menu label={Locale.ui_removeattachments}>
+        <Menu label={Locale('ui_removeattachments', 'Remove attachments')}>
           {item?.metadata?.components.map((component: string, index: number) => (
             <MenuItem
               key={index}

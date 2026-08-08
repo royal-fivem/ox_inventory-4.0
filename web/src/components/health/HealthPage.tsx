@@ -3,6 +3,7 @@ import WeightBar from '../utils/WeightBar';
 import { getItemUrl } from '../../helpers';
 import { fetchNui } from '../../utils/fetchNui';
 import { HealthData, Injury } from './types';
+import { Locale } from '../../store/locale';
 
 interface Props {
   data: HealthData;
@@ -39,9 +40,9 @@ const cornerBackground = (r: number, g: number, b: number) => {
 };
 
 const severityLabel = (severity: number) => {
-  if (severity >= 66) return 'Critical Injury';
-  if (severity >= 33) return 'Major Injury';
-  return 'Minor Injury';
+  if (severity >= 66) return Locale('ui_injury_critical', 'Critical Injury');
+  if (severity >= 33) return Locale('ui_injury_major', 'Major Injury');
+  return Locale('ui_injury_minor', 'Minor Injury');
 };
 
 // "left-arm" -> "LEFT ARM"
@@ -116,20 +117,20 @@ const HealthPage: React.FC<Props> = ({ data }) => {
       <div className="health-panel">
         {/* -------- character status -------- */}
         <section className="health-section">
-          <h2 className="health-section-title">Character Status</h2>
+          <h2 className="health-section-title">{Locale('ui_character_status', 'Character Status')}</h2>
           <div className="health-stat-row">
-            <StatBar label="Health" value={health} />
-            <StatBar label="Armor" value={armor} segments={5} color={ARMOR_COLOR} />
+            <StatBar label={Locale('ui_health', 'Health')} value={health} />
+            <StatBar label={Locale('ui_armor', 'Armor')} value={armor} segments={5} color={ARMOR_COLOR} />
           </div>
         </section>
 
         {/* -------- physical form -------- */}
         <section className="health-section">
-          <h2 className="health-section-title">Physical Form</h2>
+          <h2 className="health-section-title">{Locale('ui_physical_form', 'Physical Form')}</h2>
           <div className="health-stat">
             <div className="health-stat-head">
               <span className="health-stat-label">
-                <i className="fa-solid fa-person-running" /> Gym Stamina
+                <i className="fa-solid fa-person-running" /> {Locale('ui_gym_stamina', 'Gym Stamina')}
               </span>
               <span className="health-stat-value">{stamina}%</span>
             </div>
@@ -139,9 +140,9 @@ const HealthPage: React.FC<Props> = ({ data }) => {
 
         {/* -------- injuries -------- */}
         <section className="health-section">
-          <h2 className="health-section-title">Injuries</h2>
+          <h2 className="health-section-title">{Locale('ui_injuries', 'Injuries')}</h2>
           {injuries.length === 0 ? (
-            <p className="health-empty">You have no injuries!</p>
+            <p className="health-empty">{Locale('ui_no_injuries', 'You have no injuries!')}</p>
           ) : (
             <ul className="health-injuries">
               {injuries.map((injury) => {
@@ -167,7 +168,7 @@ const HealthPage: React.FC<Props> = ({ data }) => {
                       <span className="health-injury-severity">{severityLabel(injury.severity)}</span>
                       {injury.bleeding && (
                         <span className="health-injury-bleeding">
-                          <i className="fa-solid fa-droplet" /> Bleeding
+                          <i className="fa-solid fa-droplet" /> {Locale('ui_bleeding', 'Bleeding')}
                         </span>
                       )}
                     </div>
@@ -175,12 +176,12 @@ const HealthPage: React.FC<Props> = ({ data }) => {
                   </div>
 
                   <div className="health-injury-heal">
-                    <span className="health-injury-heal-label">Heal Injury</span>
+                    <span className="health-injury-heal-label">{Locale('ui_heal_injury', 'Heal Injury')}</span>
                     <button
                       className="health-injury-heal-btn"
                       onClick={() => healInjury(injury.id)}
                       style={{ backgroundImage: `url(${getItemUrl(injury.healItem || 'bandage')})` }}
-                      title="Heal Injury"
+                      title={Locale('ui_heal_injury', 'Heal Injury')}
                     />
                   </div>
                 </li>

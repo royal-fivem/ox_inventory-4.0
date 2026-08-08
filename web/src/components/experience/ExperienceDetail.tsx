@@ -3,6 +3,7 @@ import ExperienceIcon from './ExperienceIcons';
 import { getItemUrl } from '../../helpers';
 import { isEnvBrowser } from '../../utils/misc';
 import { Experience, ExperienceTrack } from './types';
+import { Locale } from '../../store/locale';
 
 // item images don't resolve in a browser (npm run dev), so use a hosted fallback
 const ITEM_PLACEHOLDER =
@@ -29,7 +30,7 @@ const ExperienceDetail: React.FC<Props> = ({ experience, onBack }) => {
   return (
     <div className="xp-detail">
       <button className="xp-back" onClick={onBack}>
-        <span className="xp-back-arrow">←</span> Back
+        <span className="xp-back-arrow">←</span> {Locale('ui_back', 'Back')}
       </button>
 
       <div className="xp-detail-header">
@@ -66,12 +67,12 @@ const ExperienceDetail: React.FC<Props> = ({ experience, onBack }) => {
               <ExperienceIcon name={experience.icon} />
             </span>
             <span className="xp-track-label">{experience.label}</span>
-            <span className="xp-track-lvl">Lvl {experience.level}</span>
+            <span className="xp-track-lvl">{Locale('ui_lvl', 'Lvl')} {experience.level}</span>
           </button>
 
           {experience.subExperiences.length > 0 && (
             <>
-              <div className="xp-track-section">Sub-Experiences</div>
+              <div className="xp-track-section">{Locale('ui_sub_experiences', 'Sub-Experiences')}</div>
               {experience.subExperiences.map((sub) => (
                 <button
                   key={sub.id}
@@ -82,7 +83,7 @@ const ExperienceDetail: React.FC<Props> = ({ experience, onBack }) => {
                     <ExperienceIcon name={sub.icon} />
                   </span>
                   <span className="xp-track-label">{sub.label}</span>
-                  <span className="xp-track-lvl">Lvl {sub.level}</span>
+                  <span className="xp-track-lvl">{Locale('ui_lvl', 'Lvl')} {sub.level}</span>
                 </button>
               ))}
             </>
@@ -90,14 +91,14 @@ const ExperienceDetail: React.FC<Props> = ({ experience, onBack }) => {
         </div>
 
         <div className="xp-unlocks">
-          <div className="xp-unlocks-title">Unlocks</div>
+          <div className="xp-unlocks-title">{Locale('ui_unlocks', 'Unlocks')}</div>
           <div className="xp-unlocks-list">
             {selected.unlocks.map((unlock) => {
               const reached = unlock.level <= selected.level;
               return (
                 <div className={`xp-unlock-row ${reached ? 'reached' : ''}`} key={unlock.level}>
                   <span className="xp-unlock-marker" />
-                  <span className="xp-unlock-level">Level {unlock.level}</span>
+                  <span className="xp-unlock-level">{Locale('ui_level', 'Level')} {unlock.level}</span>
                   <div className="xp-unlock-text">
                     <span className="xp-unlock-name">{unlock.title}</span>
                     {unlock.bonus && <span className="xp-unlock-bonus">{unlock.bonus}</span>}

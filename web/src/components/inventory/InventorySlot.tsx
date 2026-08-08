@@ -307,7 +307,7 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
                   </div>
                 ) : (
                   <p style={{ color: 'rgba(171, 171, 171, 1)' }}>
-                    {Locale.$ || '$'}
+                    {Locale('$', '$')}
                     {item.price.toLocaleString('en-us')}
                   </p>
                 )}

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getItemUrl } from '../../helpers';
 import { QueueJob } from './types';
 import { getItemLabel } from './craftingHelpers';
+import { Locale } from '../../store/locale';
 
 interface Props {
   /** max number of visible queue slots */
@@ -29,7 +30,7 @@ const CraftingQueue: React.FC<Props> = ({ slots, jobs, onCancel }) => {
 
   return (
     <div className="craft-queue">
-      <div className="craft-queue-title">Crafting Queue</div>
+      <div className="craft-queue-title">{Locale('ui_crafting_queue', 'Crafting Queue')}</div>
 
       <div className="craft-queue-row">
         {cells.map((_, i) => {
@@ -50,7 +51,10 @@ const CraftingQueue: React.FC<Props> = ({ slots, jobs, onCancel }) => {
               key={job.uid}
               className={`craft-queue-slot filled ${job.startedAt ? 'active' : 'waiting'}`}
               style={{ backgroundImage: `url(${getItemUrl(job.recipe.result)})` }}
-              title={`${job.recipe.label ?? getItemLabel(job.recipe.result)} — click to cancel`}
+              title={`${job.recipe.label ?? getItemLabel(job.recipe.result)} — ${Locale(
+                'ui_click_to_cancel',
+                'click to cancel'
+              )}`}
               onClick={() => onCancel(job.uid)}
             >
               {job.recipe.count > 1 && (
@@ -58,7 +62,7 @@ const CraftingQueue: React.FC<Props> = ({ slots, jobs, onCancel }) => {
               )}
 
               <span className="craft-queue-overlay">
-                {job.startedAt ? formatTime(remaining) : 'Queued'}
+                {job.startedAt ? formatTime(remaining) : Locale('ui_queued', 'Queued')}
               </span>
 
               <span className="craft-queue-track">

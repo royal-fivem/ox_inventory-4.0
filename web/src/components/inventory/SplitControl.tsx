@@ -9,6 +9,7 @@ import { findAvailableSlot, getItemData } from "../../helpers";
 import { Items } from "../../store/items";
 import { isUtilitySlot } from "../../utils/utilitySlotValidation";
 import { isEqual } from "lodash";
+import { Locale } from "../../store/locale";
 
 interface SplitControlProps {
   item: SlotWithItem;
@@ -187,9 +188,9 @@ const SplitControl: React.FC<SplitControlProps> = ({ item, amount, inventoryType
           width: "20vh",
         }}
         >
-          <h1 style={{ position: 'relative', textAlign: 'center' }}>Split</h1>
+          <h1 style={{ position: 'relative', textAlign: 'center' }}>{Locale('ui_split', 'Split')}</h1>
 
-          <h1 style={{ textAlign: 'center', fontSize: "1.5vh" }}>Item Quanity</h1>
+          <h1 style={{ textAlign: 'center', fontSize: "1.5vh" }}>{Locale('ui_item_quantity', 'Item Quantity')}</h1>
             <input
               type="number"
               value={splitAmount}

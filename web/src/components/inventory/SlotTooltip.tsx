@@ -4,13 +4,12 @@ import { Items } from '../../store/items';
 import { useAppSelector } from '../../store';
 import { getItemUrl } from '../../helpers';
 import { getRarityKey, getRarityDisplayName, Rarity } from '../../store/rarity';
+import { Locale } from '../../store/locale';
 
 type EvidenceKey = 'blood' | 'casing'
 
-const EVIDENCE_LABELS: Record<EvidenceKey, string> = {
-  blood: 'Blod',
-  casing: 'Patronhylster',
-}
+const evidenceLabel = (key: EvidenceKey) =>
+  key === 'blood' ? Locale('ui_evidence_blood', 'Blood') : Locale('ui_evidence_casing', 'Casing');
 
 const SlotTooltip: React.ForwardRefRenderFunction<
   HTMLDivElement,
@@ -142,65 +141,65 @@ const SlotTooltip: React.ForwardRefRenderFunction<
               <>
                 {item.metadata?.firstname !== undefined && (
                   <div className="tooltip-durability">
-                    <p>First Name:</p>
+                    <p>{Locale('ui_firstname', 'First Name')}:</p>
                     <a>{item.metadata?.firstname}</a>
                   </div>
                 )}
 
                 {item.metadata?.lastname !== undefined && (
                   <div className="tooltip-durability">
-                    <p>Last Name:</p>
+                    <p>{Locale('ui_lastname', 'Last Name')}:</p>
                     <a>{item.metadata?.lastname}</a>
                   </div>
                 )}
 
                 {item.metadata?.citizenid !== undefined && (
                   <div className="tooltip-durability">
-                    <p>State ID:</p>
+                    <p>{Locale('ui_stateid', 'State ID')}:</p>
                     <a>{item.metadata?.citizenid}</a>
                   </div>
                 )}
 
                 {item.metadata?.birthday !== undefined && (
                   <div className="tooltip-durability">
-                    <p>Birthday:</p>
+                    <p>{Locale('ui_birthday', 'Birthday')}:</p>
                     <a>{item.metadata?.birthday}</a>
                   </div>
                 )}
 
                 {item.durability !== undefined && (
                   <div className="tooltip-durability">
-                    <p>Durability:</p>
+                    <p>{Locale('ui_durability', 'Durability')}:</p>
                     <a>{Math.floor(item.durability)}%</a>
                   </div>
                 )}
                 {item.metadata?.ammo !== undefined && (
                   <div className="tooltip-ammo">
-                    <p>Ammunition & Type</p>
+                    <p>{Locale('ui_ammo_and_type', 'Ammunition & Type')}</p>
                     <a>{item.metadata.ammo} <b style={{ fontWeight: '200', color: 'rgba(255,255,255,0.5)' }}> ‎‎ ‎|‎ ‎‎ </b>{ammoName}</a>
                   </div>
                 )}
                 {item.metadata?.serial && (
                   <div className="tooltip-ammo">
-                    <p>Serial Number:</p>
+                    <p>{Locale('ui_serial', 'Serial Number')}:</p>
                     <a>{item.metadata.serial}</a>
                   </div>
                 )}
                 {item.metadata?.evidencetype && (
                   <div className="tooltip-ammo">
-                    <p>Evidence Type:</p>
-                    <a>{EVIDENCE_LABELS[item.metadata?.evidencetype as EvidenceKey]}</a>
+                    <p>{Locale('ui_evidence_type', 'Evidence Type')}:</p>
+                    <a>{evidenceLabel(item.metadata?.evidencetype as EvidenceKey)}</a>
                   </div>
                 )}
                 {item.metadata?.evidenceId && (
                   <div className="tooltip-ammo">
-                    <p>Evidence Number:</p>
+                    <p>{Locale('ui_evidence_number', 'Evidence Number')}:</p>
                     <a>{item.metadata.evidenceId}</a>
                   </div>
                 )}
                 {item.metadata?.components && item.metadata?.components[0] && (
                   <div className="tooltip-ammo">
-                    <p>Components:</p>
+                    <p>{Locale('ui_components', 'Components')}:</p>
                     <a>{(item.metadata?.components).map((component: string, index: number, array: []) =>
                       index + 1 === array.length ? Items[component]?.label : Items[component]?.label + ', '
                     )}</a>
@@ -208,7 +207,7 @@ const SlotTooltip: React.ForwardRefRenderFunction<
                 )}
                 {item.metadata?.weapontint && (
                     <div className="tooltip-ammo">
-                      <p>Skin:</p>
+                      <p>{Locale('ui_skin', 'Skin')}:</p>
                       <a>{item.metadata.weapontint}</a>
                     </div>
                 )}

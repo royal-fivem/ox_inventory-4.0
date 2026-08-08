@@ -6,6 +6,7 @@ import ExperienceCard from './ExperienceCard';
 import ExperienceDetail from './ExperienceDetail';
 import { Experience } from './types';
 import { MOCK_EXPERIENCE } from './mock';
+import { Locale } from '../../store/locale';
 
 interface Props {
   visible: boolean;
@@ -46,8 +47,8 @@ const ExperiencePage: React.FC<Props> = ({ visible }) => {
   return (
     <div className="xp-page">
       <div className="xp-page-header">
-        <h1>Experience</h1>
-        <p>Your progression across every discipline</p>
+        <h1>{Locale('ui_experience', 'Experience')}</h1>
+        <p>{Locale('ui_experience_subtitle', 'Your progression across every discipline')}</p>
       </div>
 
       {openExperience ? (

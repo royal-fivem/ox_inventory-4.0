@@ -1,6 +1,7 @@
 import React from 'react';
 import ExperienceIcon from './ExperienceIcons';
 import { Experience } from './types';
+import { Locale } from '../../store/locale';
 
 interface Props {
   experience: Experience;
@@ -21,7 +22,7 @@ const ExperienceCard: React.FC<Props> = ({ experience, onOpen }) => {
 
         <div className="xp-card-progress">
           <div className="xp-card-progress-head">
-            <span className="xp-card-level">Level {experience.level}</span>
+            <span className="xp-card-level">{Locale('ui_level', 'Level')} {experience.level}</span>
             <span className="xp-card-xp">
               {experience.xp} / {experience.nextXp}
             </span>

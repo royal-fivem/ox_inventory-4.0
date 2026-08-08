@@ -12,14 +12,16 @@ interface Props {
 
 const ShopCart: React.FC<Props> = ({ lines, onChangeQty, onRemove, onPay }) => {
   const total = lines.reduce((sum, l) => sum + l.product.price * l.quantity, 0);
-  const symbol = Locale.$ || '$';
+  const symbol = Locale('$', '$');
 
   return (
     <div className="shop-cart">
-      <div className="shop-cart-header">Receipt of Purchase</div>
+      <div className="shop-cart-header">{Locale('ui_receipt_of_purchase', 'Receipt of Purchase')}</div>
 
       <div className="shop-cart-body">
-        {lines.length === 0 && <div className="shop-cart-empty">Your cart is empty</div>}
+        {lines.length === 0 && (
+          <div className="shop-cart-empty">{Locale('ui_cart_empty', 'Your cart is empty')}</div>
+        )}
 
         {lines.map((line) => (
           <div className="shop-cart-line" key={line.key}>
@@ -53,7 +55,7 @@ const ShopCart: React.FC<Props> = ({ lines, onChangeQty, onRemove, onPay }) => {
 
       <div className="shop-cart-footer">
         <div className="shop-cart-total">
-          <span>Total</span>
+          <span>{Locale('ui_total', 'Total')}</span>
           <span className="shop-cart-total-value">
             {symbol}
             {total.toLocaleString('en-us')}
@@ -62,10 +64,10 @@ const ShopCart: React.FC<Props> = ({ lines, onChangeQty, onRemove, onPay }) => {
 
         <div className="shop-cart-pay">
           <button className="shop-pay-btn" disabled={lines.length === 0} onClick={() => onPay('bank')}>
-            Pay with Card
+            {Locale('ui_pay_with_card', 'Pay with Card')}
           </button>
           <button className="shop-pay-btn" disabled={lines.length === 0} onClick={() => onPay('cash')}>
-            Pay with Cash
+            {Locale('ui_pay_with_cash', 'Pay with Cash')}
           </button>
         </div>
       </div>

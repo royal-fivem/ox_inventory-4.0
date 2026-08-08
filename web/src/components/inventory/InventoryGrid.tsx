@@ -11,6 +11,7 @@ import { useIntersection } from '../../hooks/useIntersection';
 import { toAsciiLower } from '../../utils/string';
 import CharacterInfo from './CharacterInfo';
 import Fade from '../utils/transitions/Fade';
+import { Locale } from '../../store/locale';
 
 const PAGE_SIZE = 30;
 
@@ -270,7 +271,7 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
                       <button
                         type="button"
                         className="inv-search-btn"
-                        title="Search items"
+                        title={Locale('ui_search_items', 'Search items')}
                         onClick={(e) => {
                           e.stopPropagation();
                           setSearchOpen((prev) => {
@@ -285,7 +286,7 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
                       <input
                         className="inv-search-input"
                         value={searchQuery ?? ''}
-                        placeholder="Search"
+                        placeholder={Locale('ui_search', 'Search')}
                         onChange={(e) => onSearchChange?.(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
                         onKeyDown={(e) => {

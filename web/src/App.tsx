@@ -1,7 +1,7 @@
 import InventoryComponent from './components/inventory';
 import useNuiEvent from './hooks/useNuiEvent';
 import { Items } from './store/items';
-import { Locale } from './store/locale';
+import { setLocale } from './store/locale';
 import { setImageFormat, setImagePath } from './store/imagepath';
 import { setupInventory } from './store/inventory';
 import { Inventory } from './typings';
@@ -276,7 +276,7 @@ const App: React.FC = () => {
     imagepath: string;
     imageformat: string;
   }>('init', ({ locale, items, leftInventory, imagepath, imageformat }) => {
-    for (const name in locale) Locale[name] = locale[name];
+    setLocale(locale);
     for (const name in items) Items[name] = items[name];
 
     setImagePath(imagepath);

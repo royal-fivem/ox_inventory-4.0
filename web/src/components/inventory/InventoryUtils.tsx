@@ -9,6 +9,7 @@ import { fetchNui } from '../../utils/fetchNui';
 import { isEnvBrowser } from '../../utils/misc';
 import BodyFigure from '../health/BodyFigure';
 import { Injury } from '../health/types';
+import { Locale } from '../../store/locale';
 
 const PHONE_SLOT = 8;
 
@@ -19,29 +20,30 @@ const MOCK_SIMS = [
 
 type SlotConfig = {
     slot: number;
-    label?: string;
+    /** locale key + English fallback, resolved at render time */
+    label?: [key: string, fallback: string];
+    /** appended after the translated label, e.g. the "1" in "Gadget 1" */
+    labelSuffix?: number;
     showPhoneKey?: boolean;
 };
 
 const leftSlotConfigs: SlotConfig[] = [
-    { slot: 10, label: 'Gadget 1' },
-    { slot: 8, label: 'Phone', showPhoneKey: true },
-    { slot: 6, label: 'Backpack' },
+    { slot: 10, label: ['ui_slot_gadget', 'Gadget'], labelSuffix: 1 },
+    { slot: 8, label: ['ui_slot_phone', 'Phone'], showPhoneKey: true },
+    { slot: 6, label: ['ui_slot_backpack', 'Backpack'] },
 ];
 
 const rightSlotConfigs: SlotConfig[] = [
-    { slot: 11, label: 'Gadget 2' },
-    { slot: 7, label: 'Armor' },
-    { slot: 12, label: 'Radio' },
+    { slot: 11, label: ['ui_slot_gadget', 'Gadget'], labelSuffix: 2 },
+    { slot: 7, label: ['ui_slot_armor', 'Armor'] },
+    { slot: 12, label: ['ui_slot_radio', 'Radio'] },
 ];
 
-const hotkeySlotConfigs: SlotConfig[] = [
-    { slot: 1, label: 'Hotkey 1' },
-    { slot: 2, label: 'Hotkey 2' },
-    { slot: 3, label: 'Hotkey 3' },
-    { slot: 4, label: 'Hotkey 4' },
-    { slot: 5, label: 'Hotkey 5' },
-];
+const hotkeySlotConfigs: SlotConfig[] = [1, 2, 3, 4, 5].map((n) => ({
+    slot: n,
+    label: ['ui_slot_hotkey', 'Hotkey'] as [string, string],
+    labelSuffix: n,
+}));
 
 interface InventoryUtilsProps {
     figureOnly?: boolean;
@@ -142,7 +144,10 @@ const InventoryUtils: React.FC<InventoryUtilsProps> = ({ figureOnly = false, inj
     }, []);
 
 
-    const renderSlot = ({ slot, label, showPhoneKey }: SlotConfig) => {
+    const renderSlot = ({ slot, label, labelSuffix, showPhoneKey }: SlotConfig) => {
+        const slotLabel = label
+            ? `${Locale(label[0], label[1])}${labelSuffix !== undefined ? ` ${labelSuffix}` : ''}`
+            : undefined;
         const slotItem = items.find((item) => item.slot === slot) || { slot };
         const hasItem = isSlotWithItem(slotItem);
 
@@ -158,7 +163,7 @@ const InventoryUtils: React.FC<InventoryUtilsProps> = ({ figureOnly = false, inj
 
         return (
             <div className={`utility-slot-group ${isPhone ? 'phone-group' : ''}`} key={`utility-slot-${slot}`} style={{ opacity: matches ? 1 : 0.25, transition: 'opacity 0.2s ease' }}>
-                {label && <div className="utility-slot-label">{label}</div>}
+                {slotLabel && <div className="utility-slot-label">{slotLabel}</div>}
                 <div className="phone-slot-row">
                     <div className="utility-slot-wrapper">
                         {isPhoneSlot && (
@@ -184,7 +189,7 @@ const InventoryUtils: React.FC<InventoryUtilsProps> = ({ figureOnly = false, inj
                                     <button
                                         key={i}
                                         className={`phone-sim-slot ${hasSim ? 'filled' : ''}`}
-                                        title="Phone — click to open / close SIM cards"
+                                        title={Locale('ui_phone_sim_hint', 'Phone — click to open / close SIM cards')}
                                         onClick={togglePhoneContainer}
                                         style={
                                             hasSim

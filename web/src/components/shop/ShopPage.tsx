@@ -6,7 +6,7 @@ import { isEnvBrowser } from '../../utils/misc';
 import { isSlotWithItem } from '../../helpers';
 import { Items } from '../../store/items';
 import {
-  ALL_CATEGORY,
+  allCategory,
   CartLine,
   iconForCategory,
   MAX_CATEGORIES,
@@ -19,6 +19,7 @@ import {
 import { MOCK_SHOP_CATEGORIES, MOCK_SHOP_LABEL, MOCK_SHOP_PRODUCTS } from './mock';
 import ShopProductCard from './ShopProductCard';
 import ShopCart from './ShopCart';
+import { Locale } from '../../store/locale';
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -72,7 +73,7 @@ const ShopPage: React.FC = () => {
       }
     }
 
-    return [ALL_CATEGORY, ...cats.slice(0, MAX_CATEGORIES)];
+    return [allCategory(), ...cats.slice(0, MAX_CATEGORIES)];
   }, [rightInv, products, usingMock]);
 
   // --- filter + sort ---
@@ -155,7 +156,7 @@ const ShopPage: React.FC = () => {
                   onClick={() => onSortClick(s.id)}
                 >
                   <i className={`fa-solid ${s.icon}`} />
-                  {s.label}
+                  {Locale(`ui_shop_sort_${s.id}`, s.label)}
                   {sortId === s.id && (
                     <span className="shop-sort-arrow">{sortDir === 'asc' ? '↑' : '↓'}</span>
                   )}
@@ -165,7 +166,7 @@ const ShopPage: React.FC = () => {
 
             <input
               className="shop-search"
-              placeholder="Search"
+              placeholder={Locale('ui_search', 'Search')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -186,7 +187,9 @@ const ShopPage: React.FC = () => {
         </div>
 
         <div className="shop-grid">
-          {visibleProducts.length === 0 && <div className="shop-empty">No items found</div>}
+          {visibleProducts.length === 0 && (
+            <div className="shop-empty">{Locale('ui_no_items_found', 'No items found')}</div>
+          )}
           {visibleProducts.map((p) => (
             <ShopProductCard key={`${p.name}:${p.slot}`} product={p} onAdd={addToCart} />
           ))}

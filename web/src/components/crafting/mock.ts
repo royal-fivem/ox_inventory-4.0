@@ -1,10 +1,10 @@
 import { CraftingConfig } from './types';
-import { DEFAULT_CATEGORIES } from './config';
+import { getDefaultCategories } from './config';
 
 // Mock config used when running the UI in a regular browser (yarn start),
 // so the crafting page renders without a live FiveM backend.
 export const MOCK_CRAFTING: CraftingConfig = {
-  categories: DEFAULT_CATEGORIES,
+  categories: getDefaultCategories(),
   recipes: [
     {
       id: 'brake_discs',

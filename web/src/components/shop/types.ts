@@ -2,6 +2,8 @@
 //  Shop page types
 // ======================================================================
 
+import { Locale } from '../../store/locale';
+
 export interface ShopProduct {
   slot: number;
   name: string;
@@ -50,6 +52,7 @@ export interface CartLine {
   quantity: number;
 }
 
+// `label` is the English fallback; the locale key is `ui_shop_sort_<id>`.
 export const SHOP_SORTS = [
   { id: 'name', label: 'Name', icon: 'fa-arrow-down-a-z' },
   { id: 'price', label: 'Price', icon: 'fa-money-bill' },
@@ -59,5 +62,6 @@ export const SHOP_SORTS = [
 export type ShopSortId = (typeof SHOP_SORTS)[number]['id'];
 export type SortDir = 'asc' | 'desc';
 
-export const ALL_CATEGORY: ShopCategory = { id: 'all', label: 'All' };
+/** Resolved lazily — the locale table only arrives with the `init` NUI event. */
+export const allCategory = (): ShopCategory => ({ id: 'all', label: Locale('ui_all', 'All') });
 export const MAX_CATEGORIES = 5;

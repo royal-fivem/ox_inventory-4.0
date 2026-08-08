@@ -4,6 +4,7 @@ import { DragSource } from '../../typings';
 import { GridCell, PlacedCell } from './types';
 import { getItemLabel } from './craftingHelpers';
 import ItemSlotVisual from '../utils/ItemSlotVisual';
+import { Locale } from '../../store/locale';
 
 const DROP_BORDER: React.CSSProperties = { border: '1px dashed #a2ca31' };
 const EMPTY_BORDER: React.CSSProperties = { border: '1px dashed rgba(255,255,255,0.1)' };
@@ -43,7 +44,7 @@ const BenchCell: React.FC<CellProps> = ({ index, manual, preview, manualMode, on
         metadata={manual.metadata}
         rarity={manual.rarity}
         style={{ cursor: 'pointer', ...(dropOver ? DROP_BORDER : {}) }}
-        title={`${getItemLabel(manual.name)} — click to remove`}
+        title={`${getItemLabel(manual.name)} — ${Locale('ui_click_to_remove', 'click to remove')}`}
         onClick={() => onRemoveCell(index)}
       />
     );

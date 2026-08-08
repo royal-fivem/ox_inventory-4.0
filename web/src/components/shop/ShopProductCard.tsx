@@ -18,7 +18,7 @@ const ShopProductCard: React.FC<Props> = ({ product, onAdd }) => {
   const clamp = (n: number) => Math.min(maxQty, Math.max(1, n));
 
   const currencySymbol =
-    product.currency && product.currency !== 'money' ? '' : Locale.$ || '$';
+    product.currency && product.currency !== 'money' ? '' : Locale('$', '$');
 
   return (
     <div className={`shop-card ${soldOut ? 'sold-out' : ''}`}>
@@ -60,7 +60,7 @@ const ShopProductCard: React.FC<Props> = ({ product, onAdd }) => {
             disabled={soldOut}
             onClick={() => onAdd(product, qty)}
           >
-            {soldOut ? 'Sold Out' : 'Add to Cart'}
+            {soldOut ? Locale('ui_sold_out', 'Sold Out') : Locale('ui_add_to_cart', 'Add to Cart')}
           </button>
         </div>
       </div>

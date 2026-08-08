@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
+import { Locale } from '../../store/locale';
 
 interface Props {
     activeIndex: number;
@@ -8,11 +9,12 @@ interface Props {
 
 const EXPERIENCE_INDEX = 3;
 
+// labels are locale keys + English fallbacks, translated at render time
 const ALL_PAGES = [
-    { label: 'Inventory', index: 0 },
-    { label: 'Health & Injuries', index: 1 },
-    { label: 'Crafting', index: 2 },
-    { label: 'Experience', index: EXPERIENCE_INDEX },
+    { key: 'ui_tab_inventory', fallback: 'Inventory', index: 0 },
+    { key: 'ui_tab_health', fallback: 'Health & Injuries', index: 1 },
+    { key: 'ui_tab_crafting', fallback: 'Crafting', index: 2 },
+    { key: 'ui_tab_experience', fallback: 'Experience', index: EXPERIENCE_INDEX },
 ];
 
 const InventoryPanelSwitcher: React.FC<Props> = ({ activeIndex, setActiveIndex, hasExperience = false }) => {
@@ -78,7 +80,7 @@ const InventoryPanelSwitcher: React.FC<Props> = ({ activeIndex, setActiveIndex, 
                         className={`panel-switch-tab ${page.index === activeIndex ? 'active' : ''}`}
                         onClick={() => setActiveIndex(page.index)}
                     >
-                        {page.label}
+                        {Locale(page.key, page.fallback)}
                     </button>
                 ))}
             </div>

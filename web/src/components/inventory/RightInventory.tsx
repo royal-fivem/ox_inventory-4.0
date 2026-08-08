@@ -13,6 +13,7 @@ import { Items } from '../../store/items';
 import { useNuiEvent } from '../../hooks/useNuiEvent';
 
 import CircularProgress from './ProgressCircle';
+import { Locale } from '../../store/locale';
 
 interface ShopItem {
     slot: number;
@@ -480,12 +481,15 @@ const RightInventory: React.FC = () => {
                             fontWeight: '600', 
                             paddingBottom: '0.5rem', 
                             paddingTop: '0.5rem' }}
-                        >Shopping Cart</a>
+                        >{Locale('ui_shopping_cart', 'Shopping Cart')}</a>
 
-                        {cart.length === 0 && 
+                        {cart.length === 0 &&
                             <div className="no-items">
                                 <i className="fa-regular fa-square-plus"></i>
-                                <p>DRAG SHOP ITEMS HERE<a>ALTERNATIVELY, DOUBLE CLICK OR SHIFT + CLICK</a></p>
+                                <p>
+                                    {Locale('ui_drag_shop_items', 'DRAG SHOP ITEMS HERE')}
+                                    <a>{Locale('ui_drag_shop_items_alt', 'ALTERNATIVELY, DOUBLE CLICK OR SHIFT + CLICK')}</a>
+                                </p>
                             </div>
                         }
 
@@ -524,7 +528,7 @@ const RightInventory: React.FC = () => {
 
                         <div className="cart-footer">
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <a>Total:</a>
+                                <a>{Locale('ui_total', 'Total')}:</a>
                                 <p style={{ fontSize: '1vw' }}>${animatedTotal.toFixed(2)}</p>
                             </div>
 
@@ -532,12 +536,12 @@ const RightInventory: React.FC = () => {
 
                                 <button className='shopping-cart-buttons' onClick={() => pay('bank')}>
                                     <i className="hgi hgi-stroke hgi-credit-card"></i>
-                                    <p>Pay Bank</p>
+                                    <p>{Locale('ui_pay_bank', 'Pay Bank')}</p>
                                 </button>
 
                                 <button className='shopping-cart-buttons' onClick={() => pay('cash')}>
                                     <i className="hgi hgi-stroke hgi-coins-02"></i>
-                                    <p>Pay Cash</p>
+                                    <p>{Locale('ui_pay_cash', 'Pay Cash')}</p>
                                 </button>
                             </div>
                         </div>
@@ -555,7 +559,7 @@ const RightInventory: React.FC = () => {
                         style={{ width: '50vh' }}
                         className={`inventory-grid-wrapper crafting-grid ${isOver && canDrop ? "highlight" : ""}`}
                     >
-                        <h3>Crafting</h3>
+                        <h3>{Locale('ui_crafting', 'Crafting')}</h3>
 
                         <div className="crafting-container">
                             <div style={{
@@ -651,7 +655,7 @@ const RightInventory: React.FC = () => {
                                                     fontWeight: '400',
                                                     fontSize: '1vh',
                                                     color: 'rgba(255,255,255,0.5)',
-                                                }}>Quantity</p>
+                                                }}>{Locale('ui_quantity', 'Quantity')}</p>
                                                 <a style={{
                                                     marginTop: '0.5vh',
                                                     display: 'flex',
@@ -667,7 +671,7 @@ const RightInventory: React.FC = () => {
                                             color: 'rgba(255,255,255,0.5)',
                                             fontWeight: '500',
                                         }}>
-                                            CRAFTING TIME:
+                                            {Locale('ui_crafting_time', 'CRAFTING TIME')}:
                                             <a style={{
                                                 color: 'rgba(255,255,255)',
                                                 fontSize: '1.25vh',
@@ -688,7 +692,7 @@ const RightInventory: React.FC = () => {
                                             display: 'flex',
                                             fontSize: '1vh',
                                             color: 'rgba(255,255,255,0.5)',
-                                        }}>Items Required</a>
+                                        }}>{Locale('ui_items_required', 'Items Required')}</a>
 
                                         <div className="ingredients-grid" style={{
                                             display: 'flex',
@@ -744,7 +748,7 @@ const RightInventory: React.FC = () => {
                                                 <a style={{
                                                     color: 'rgba(255,255,255,0.5)',
                                                     fontSize: '1vh',
-                                                }}>Quantity</a>
+                                                }}>{Locale('ui_quantity', 'Quantity')}</a>
                                                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', backgroundColor: 'rgba(0,0,0,0.5)', padding: '0.5rem', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '0.5rem' }}>
                                                     <button style={{ color: 'white', background: 'transparent', border: 'none', cursor: 'pointer' }} onClick={() => setRecipeQuantity(Math.max(1, recipeQuantity - 1))}><i className="fas fa-minus"></i></button>
                                                     <span style={{
@@ -768,7 +772,7 @@ const RightInventory: React.FC = () => {
                                                 transition: 'background-color 0.3s, border 0.3s',
                                                 cursor: hasEnoughMaterials ? 'pointer' : 'not-allowed',
                                             }}>
-                                                Add to Queue
+                                                {Locale('ui_add_to_queue', 'Add to Queue')}
                                             </button>
                                         </div>
 
@@ -785,7 +789,7 @@ const RightInventory: React.FC = () => {
                                             fontSize: '1.2vh',
                                             color: 'rgba(255,255,255,0.5)',
                                             fontWeight: '500',
-                                        }}>Crafting Queue</a>
+                                        }}>{Locale('ui_crafting_queue', 'Crafting Queue')}</a>
                                         {craftQueue.length > 0 && (
                                             <div style={{
                                                 display: 'flex',
@@ -862,11 +866,11 @@ const RightInventory: React.FC = () => {
                                             </div>
                                         )}
                                         {craftQueue.length === 0 && (
-                                            <p style={{ marginTop: '1rem', color: 'rgba(255,255,255,0.5)' }}>No items in queue</p>
+                                            <p style={{ marginTop: '1rem', color: 'rgba(255,255,255,0.5)' }}>{Locale('ui_no_items_in_queue', 'No items in queue')}</p>
                                         )}
                                     </>
                                 ) : (
-                                    <p>Select a recipe</p>
+                                    <p>{Locale('ui_select_recipe', 'Select a recipe')}</p>
                                 )}
                             </div>
 

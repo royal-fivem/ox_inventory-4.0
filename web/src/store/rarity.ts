@@ -1,3 +1,5 @@
+import { Locale } from './locale';
+
 export const Rarity: {
     [key: string]: string
 } = {
@@ -35,7 +37,7 @@ export const getRarityKey = (rarity: string | number | null | undefined): string
 
 export const getRarityDisplayName = (rarity: string | number | null | undefined): string => {
     const key = getRarityKey(rarity);
-    if (!key) return 'common';
-    
-    return key.charAt(0).toUpperCase() + key.slice(1);
+    if (!key) return Locale('ui_rarity_common', 'Common');
+
+    return Locale(`ui_rarity_${key}`, key.charAt(0).toUpperCase() + key.slice(1));
 }

@@ -6,6 +6,7 @@ import { fetchNui } from '../../utils/fetchNui';
 import { isEnvBrowser } from '../../utils/misc';
 import { getItemLabel } from './craftingHelpers';
 import { useCraftingQueue } from './CraftingQueueContext';
+import { Locale } from '../../store/locale';
 
 /**
  * Compact crafting indicator shown on the right side of the screen while a
@@ -58,7 +59,8 @@ const CraftingHud: React.FC = () => {
   return createPortal(
     <div className="craft-hud">
       <div className="craft-hud-title">
-        Crafting{queued > 0 ? ` +${queued}` : '...'}
+        {Locale('ui_crafting', 'Crafting')}
+        {queued > 0 ? ` +${queued}` : '...'}
       </div>
 
       <div
@@ -77,7 +79,7 @@ const CraftingHud: React.FC = () => {
       </div>
 
       <button className="craft-hud-cancel" onClick={cancelActive}>
-        <span className="craft-hud-key">X</span> Cancel
+        <span className="craft-hud-key">X</span> {Locale('ui_cancel', 'Cancel')}
       </button>
     </div>,
     document.body

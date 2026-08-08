@@ -4,6 +4,7 @@ import { CraftCategory, CraftRecipe } from './types';
 import { getItemLabel } from './craftingHelpers';
 import { FALLBACK_CATEGORY_ID, SortMode } from './config';
 import Dropdown, { DropdownOption } from './Dropdown';
+import { Locale } from '../../store/locale';
 
 interface Props {
   recipes: CraftRecipe[];
@@ -41,7 +42,10 @@ const CraftingCodex: React.FC<Props> = ({
     categoryMap[recipe.category] ? recipe.category : FALLBACK_CATEGORY_ID;
 
   const categoryOptions: DropdownOption[] = useMemo(
-    () => [{ value: 'all', label: 'All' }, ...categories.map((c) => ({ value: c.id, label: c.label }))],
+    () => [
+      { value: 'all', label: Locale('ui_all', 'All') },
+      ...categories.map((c) => ({ value: c.id, label: c.label })),
+    ],
     [categories]
   );
 
@@ -90,10 +94,10 @@ const CraftingCodex: React.FC<Props> = ({
   return (
     <div className="craft-codex">
       <div className="craft-codex-header">
-        <h2>Crafting Codex</h2>
+        <h2>{Locale('ui_crafting_codex', 'Crafting Codex')}</h2>
         <button
           className={`craft-fav-toggle ${favOnly ? 'active' : ''}`}
-          title="Show favorites only"
+          title={Locale('ui_favorites_only', 'Show favorites only')}
           onClick={() => setFavOnly((v) => !v)}
         >
           ★
@@ -103,7 +107,7 @@ const CraftingCodex: React.FC<Props> = ({
       <div className="craft-codex-controls">
         <Dropdown
           className="craft-codex-filter"
-          title="Filter by category"
+          title={Locale('ui_filter_category', 'Filter by category')}
           value={categoryFilter}
           onChange={setCategoryFilter}
           options={categoryOptions}
@@ -111,14 +115,16 @@ const CraftingCodex: React.FC<Props> = ({
 
         <input
           className="craft-codex-search"
-          placeholder="Search"
+          placeholder={Locale('ui_search', 'Search')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
       <div className="craft-codex-body">
-        {groups.length === 0 && loaded && <div className="craft-codex-empty">No recipes found</div>}
+        {groups.length === 0 && loaded && (
+          <div className="craft-codex-empty">{Locale('ui_no_recipes_found', 'No recipes found')}</div>
+        )}
 
 
         {groups.map(({ cat, items }) => (
