@@ -60,6 +60,8 @@ end
 ---@param slots updateSlot[]
 ---@param syncOwner? boolean
 function OxInventory:syncSlotsWithClients(slots, syncOwner)
+    slots = Inventory.MaskSlotUpdates(self, slots)
+
     for playerId in pairs(self.openedBy) do
         if self.id ~= playerId then
             local target = Inventories[playerId]
@@ -87,7 +89,8 @@ for _, stash in pairs(lib.load('data.stashes') or {}) do
         maxWeight = stash.weight,
         groups = stash.groups or stash.jobs,
         coords = shared.target and stash.target?.loc or stash.coords,
-        distance = stash.distance or 10
+        distance = stash.distance or 10,
+        hiddenItems = stash.hiddenItems
     }
 end
 
@@ -207,6 +210,8 @@ local function loadInventoryData(data, player, ignoreSecurityChecks)
                     stash.maxWeight, owner, nil, stash.groups)
                 inventory.coords = stash.coords
                 inventory.distance = stash.distance
+
+                if stash.hiddenItems then Inventory.HideItems(inventory) end
             end
         end
     end
@@ -606,6 +611,91 @@ RegisterCommand('clearActiveIdentifier', function(source, args)
     Inventory.Remove(inventory)
 end, true)
 
+---@param inv OxInventory
+---@param slot number
+---@return boolean
+function Inventory.IsSlotHidden(inv, slot)
+    if not inv.hiddenSlots or not inv.hiddenSlots[slot] then return false end
+
+    -- the item is gone (removed by a script), so there is nothing left to hide
+    if not inv.items[slot]?.name then
+        inv.hiddenSlots[slot] = nil
+        return false
+    end
+
+    return true
+end
+
+---Mark item slots as unsearched, requiring a player to click them to reveal the contents.
+---@param inv inventory
+---@param slots? number[] specific slots to hide, otherwise every occupied slot
+function Inventory.HideItems(inv, slots)
+    inv = Inventory(inv) --[[@as OxInventory?]]
+
+    if not inv then return end
+
+    inv.hiddenItems = true
+    inv.hiddenSlots = inv.hiddenSlots or {}
+
+    if slots then
+        for i = 1, #slots do
+            local slot = slots[i]
+
+            if inv.items[slot]?.name then inv.hiddenSlots[slot] = true end
+        end
+    else
+        for slot, slotData in pairs(inv.items) do
+            if type(slotData) == 'table' and slotData.name then inv.hiddenSlots[slot] = true end
+        end
+    end
+end
+
+exports('HideItems', Inventory.HideItems)
+
+---Returns the inventory's items with every unsearched slot replaced by a placeholder.
+---@param inv OxInventory
+---@return table
+function Inventory.MaskHiddenItems(inv)
+    if not inv.hiddenItems or not inv.hiddenSlots or not next(inv.hiddenSlots) then return inv.items end
+
+    local items = {}
+
+    for slot, slotData in pairs(inv.items) do
+        -- rarity is kept so the slot still gets its rarity border while unsearched
+        items[slot] = Inventory.IsSlotHidden(inv, slot) and { slot = slot, hidden = true, rarity = slotData.rarity } or
+            slotData
+    end
+
+    return items
+end
+
+---Mask any slot updates referring to an unsearched slot before they reach clients.
+---@param inv OxInventory
+---@param slots updateSlot[]
+---@return updateSlot[]
+function Inventory.MaskSlotUpdates(inv, slots)
+    if not inv.hiddenItems or not inv.hiddenSlots or not next(inv.hiddenSlots) then return slots end
+    if type(slots) ~= 'table' or table.type(slots) ~= 'array' then return slots end
+
+    local masked = table.create(#slots, 0)
+
+    for i = 1, #slots do
+        local data = slots[i]
+        local slot = data.item?.slot
+
+        if slot and data.inventory == inv.id and Inventory.IsSlotHidden(inv, slot) then
+            masked[i] = {
+                item = { slot = slot, hidden = true, rarity = data.item.rarity },
+                inventory = data.inventory
+            }
+        else
+            masked[i] = data
+        end
+    end
+
+    return masked
+end
+
 ---@param id string|number
 ---@param label string|nil
 ---@param invType string
@@ -661,6 +751,10 @@ function Inventory.Create(id, label, invType, slots, weight, maxWeight, owner, i
     end
 
     Inventories[self.id] = setmetatable(self, OxInventory)
+
+    -- dumpster loot is always searched item by item
+    if invType == 'dumpster' then Inventory.HideItems(Inventories[self.id]) end
+
     return Inventories[self.id]
 end
 
@@ -1906,6 +2000,49 @@ local GetLocks = require 'modules.locks'
 
 ---@param source number
 ---@param data SwapSlotData
+---Reveals a single unsearched slot in the inventory the player currently has open.
+lib.callback.register('ox_inventory:searchSlot', function(source, slot)
+    if type(slot) ~= 'number' then return end
+
+    local playerInventory = Inventory(source)
+
+    if not playerInventory or not playerInventory.open then return end
+
+    local inventory = Inventory(playerInventory.open) --[[@as OxInventory?]]
+
+    if not inventory or not inventory.hiddenItems or not inventory.openedBy[source] then return end
+
+    local item = inventory.items[slot]
+
+    if not item then
+        if inventory.hiddenSlots then inventory.hiddenSlots[slot] = nil end
+        return
+    end
+
+    if not Inventory.IsSlotHidden(inventory, slot) then return item end
+
+    inventory.hiddenSlots[slot] = nil
+
+    -- everyone else gets the item right away, the searching player reveals it
+    -- once their search animation has played out
+    for playerId in pairs(inventory.openedBy) do
+        if playerId ~= source and inventory.id ~= playerId then
+            local target = Inventories[playerId]
+
+            if target then
+                TriggerClientEvent('ox_inventory:updateSlots', playerId, {
+                    {
+                        item = item,
+                        inventory = inventory.id
+                    }
+                }, target.weight)
+            end
+        end
+    end
+
+    return item
+end)
+
 lib.callback.register('ox_inventory:swapItems', function(source, data)
     if data.fromInventory ~= data.toInventory and not playerSideTypes[data.fromType] and not playerSideTypes[data.toType] then
         Utils.LogExploit(source, 'swapItems', 'Triggered event with invalid data')
@@ -1957,6 +2094,11 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
     local fromOtherPlayer = fromInventory.player and fromInventory ~= playerInventory
     local toOtherPlayer = toInventory.player and toInventory ~= playerInventory
     local toData = toInventory.items[data.toSlot]
+
+    -- unsearched slots don't exist as far as the player is concerned
+    if Inventory.IsSlotHidden(fromInventory, data.fromSlot) or Inventory.IsSlotHidden(toInventory, data.toSlot) then
+        return false, 'cannot_perform'
+    end
 
     if not sameInventory and (fromInventory.type == 'policeevidence' or (toInventory.type == 'policeevidence' and toData)) then
         local group, rank = server.hasGroup(playerInventory, shared.police)
@@ -3025,7 +3167,8 @@ end
 ---
 --- groups: { ['police'] = 0 }
 --- ```
-local function registerStash(name, label, slots, maxWeight, owner, groups, coords)
+---@param hiddenItems? boolean items must be searched (clicked) before they can be seen or taken
+local function registerStash(name, label, slots, maxWeight, owner, groups, coords, hiddenItems)
     name, slots, maxWeight, coords = checkStashProperties({
         name = name,
         slots = slots,
@@ -3047,6 +3190,8 @@ local function registerStash(name, label, slots, maxWeight, owner, groups, coord
                 stash.maxWeight = maxWeight or stash.maxWeight
                 stash.groups = groups or stash.groups
                 stash.coords = coords or stash.coords
+
+                if hiddenItems then Inventory.HideItems(stash) end
             end
         end
     end
@@ -3058,7 +3203,8 @@ local function registerStash(name, label, slots, maxWeight, owner, groups, coord
         slots = slots,
         maxWeight = maxWeight,
         groups = groups,
-        coords = coords
+        coords = coords,
+        hiddenItems = hiddenItems
     }
 end
 
@@ -3076,6 +3222,8 @@ function Inventory.CreateTemporaryStash(properties)
 
     inventory.items, inventory.weight = generateItems(inventory, 'drop', properties.items)
     inventory.coords = coords
+
+    if properties.hiddenItems then Inventory.HideItems(inventory) end
 
     return inventory.id
 end

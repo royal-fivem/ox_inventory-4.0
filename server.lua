@@ -432,7 +432,7 @@ local function openInventory(source, invType, data, ignoreSecurityChecks)
         slots = right.slots,
         weight = right.weight,
         maxWeight = right.maxWeight,
-        items = right.items,
+        items = right.hiddenItems and Inventory.MaskHiddenItems(right) or right.items,
         coords = closestCoords or right.coords,
         distance = right.distance
     }
@@ -917,6 +917,40 @@ lib.addCommand('saveinv', {
     restricted = 'group.admin',
 }, function(source, args)
     Inventory.SaveInventories(args.lock == 'true', false)
+end)
+
+lib.addCommand({ 'hiddenstash', 'searchstash' }, {
+    help = 'Opens a temporary stash filled with unsearched items, to showcase the search mechanic',
+    params = {
+        { name = 'count', type = 'number', help = 'Number of items to place in the stash (default 6)', optional = true },
+    },
+    restricted = 'group.admin',
+}, function(source, args)
+    local loot = server.dumpsterloot
+
+    if not loot or #loot == 0 then
+        return warn('cannot create a hidden stash (inventory:dumpsterloot is empty)')
+    end
+
+    local count = math.max(1, math.min(args.count or 6, 20))
+    local items = table.create(count, 0)
+
+    for i = 1, count do
+        local entry = loot[math.random(#loot)]
+        items[i] = { entry[1], math.random(entry[2], entry[3]) }
+    end
+
+    local stashId = Inventory.CreateTemporaryStash({
+        label = 'Hidden Stash',
+        slots = math.max(count, 12),
+        maxWeight = 100000,
+        items = items,
+        hiddenItems = true,
+    })
+
+    if not stashId then return end
+
+    server.forceOpenInventory(source, 'stash', stashId)
 end)
 
 lib.addCommand('viewinv', {

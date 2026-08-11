@@ -8,6 +8,7 @@ export type Slot = {
   };
   durability?: number;
   rarity?: string;
+  hidden?: boolean;
 };
 
 export type SlotWithItem = Slot & {

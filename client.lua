@@ -2364,6 +2364,14 @@ lib.callback.register('ox_inventory:getVehicleData', function(netid)
     end
 end)
 
+RegisterNUICallback('searchSlot', function(data, cb)
+    if not invOpen then return cb(false) end
+
+    local item = lib.callback.await('ox_inventory:searchSlot', false, tonumber(data?.slot))
+
+    cb(item or false)
+end)
+
 RegisterNUICallback('fetchSlotRestrictions', function(data, cb)
     local restrictions = SlotRestrictions.fetch()
     cb(restrictions)

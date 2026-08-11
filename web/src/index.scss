@@ -4086,3 +4086,107 @@ $xpGreenDim: rgba(162, 202, 49, 0.55);
     background-color: rgba(0, 0, 0, 0.5);
   }
 }
+
+.inventory-slot-hidden {
+  --search-duration: 1500ms;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.inventory-slot-hidden-cover {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.035) 0px,
+      rgba(255, 255, 255, 0.035) 6px,
+      transparent 6px,
+      transparent 12px
+    ),
+    linear-gradient(180deg, rgba(40, 40, 40, 0.9), rgba(18, 18, 18, 0.95));
+  transition: 150ms ease;
+}
+
+.inventory-slot:hover .inventory-slot-hidden-cover {
+  background: repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.07) 0px,
+      rgba(255, 255, 255, 0.07) 6px,
+      transparent 6px,
+      transparent 12px
+    ),
+    linear-gradient(180deg, rgba(55, 55, 55, 0.9), rgba(24, 24, 24, 0.95));
+}
+
+.inventory-slot-hidden.searching .inventory-slot-hidden-cover {
+  animation: inventory-slot-fade-out var(--search-duration) ease-in forwards;
+}
+
+.inventory-slot-hidden-mark {
+  font-size: 1.6vh;
+  color: rgba(255, 255, 255, 0.35);
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+  transition: 150ms ease;
+  z-index: 1;
+}
+
+.inventory-slot:hover .inventory-slot-hidden-mark {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.inventory-slot-hidden.searching .inventory-slot-hidden-mark {
+  animation: inventory-slot-fade-out calc(var(--search-duration) * 0.6) ease-in forwards;
+}
+
+.inventory-slot-hidden-reveal {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 5vh;
+  opacity: 0;
+  animation: inventory-slot-fade-in var(--search-duration) ease-in forwards;
+}
+
+.inventory-slot-hidden-scan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 30%;
+  background: linear-gradient(90deg, transparent, rgba(191, 255, 116, 0.4), transparent);
+  animation: inventory-slot-scan var(--search-duration) linear forwards;
+}
+
+@keyframes inventory-slot-scan {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(333%);
+  }
+}
+
+@keyframes inventory-slot-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes inventory-slot-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

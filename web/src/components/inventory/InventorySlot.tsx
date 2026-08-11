@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { DragSource, InventoryType, SlotWithItem } from '../../typings';
 import { useDrag, useDragDropManager, useDrop } from 'react-dnd';
 import { useAppDispatch, useAppSelector } from '../../store';
@@ -18,6 +18,11 @@ import { closeTooltip } from '../../store/tooltip';
 import { openContextMenu } from '../../store/contextMenu';
 import { useMergeRefs } from '@floating-ui/react';
 import { Rarity, getRarityKey } from '../../store/rarity';
+import { refreshSlots } from '../../store/inventory';
+import { fetchNui } from '../../utils/fetchNui';
+import { Slot } from '../../typings';
+
+const SEARCH_DURATION = 1500;
 
 interface SlotProps {
   inventoryId: string;
@@ -53,10 +58,45 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
   const hideItemDetails = useAppSelector(selectHideItemDetails);
   const hideRarityBorder = useAppSelector(selectHideRarityBorder);
 
+  const isHidden = !!item?.hidden;
+  const [revealedItem, setRevealedItem] = useState<Slot | null>(null);
+  const isSearching = useRef(false);
+  const searchTimers = useRef<number[]>([]);
+
+  useEffect(
+    () => () => {
+      searchTimers.current.forEach((id) => window.clearTimeout(id));
+      searchTimers.current = [];
+    },
+    []
+  );
+
+  const searchSlot = useCallback(async () => {
+    if (isSearching.current) return;
+
+    isSearching.current = true;
+
+    const revealed = await fetchNui<Slot | false>('searchSlot', { slot: item.slot });
+
+    if (!revealed) {
+      isSearching.current = false;
+      return;
+    }
+
+    setRevealedItem(revealed);
+
+    searchTimers.current.push(
+      window.setTimeout(() => {
+        dispatch(refreshSlots({ items: [{ item: revealed, inventory: inventoryType as any }] }));
+        setRevealedItem(null);
+        isSearching.current = false;
+      }, SEARCH_DURATION)
+    );
+  }, [dispatch, inventoryType, item.slot]);
+
   const hasItem = isSlotWithItem(item);
-  const rarityKey = hasItem ? getRarityKey(item?.rarity) : null;
+  const rarityKey = hasItem || isHidden ? getRarityKey(item?.rarity) : null;
   const rarityColor = rarityKey ? Rarity[rarityKey] : null;
-  // rarity glow/border can be toggled off; the coloured bar beneath stays
   const showRarity = !!rarityColor && !hideRarityBorder;
 
   const withAlpha = (color: string, alpha: number) => {
@@ -134,7 +174,8 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
       },
       canDrop: (source) => {
         if (source.inventory === InventoryType.SHOP) return false;
-        const baseAllowed =
+        if (isHidden) return false;
+        const baseAllowed: boolean =
           (source.item.slot !== item.slot || source.inventory !== inventoryType) &&
           inventoryType !== InventoryType.SHOP &&
           inventoryType !== InventoryType.CRAFTING;
@@ -196,6 +237,12 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     dispatch(closeTooltip());
     if (timerRef.current) clearTimeout(timerRef.current);
+
+    if (isHidden) {
+      searchSlot();
+      return;
+    }
+
     if (event.ctrlKey && isSlotWithItem(item)) {
       if (inventoryType === InventoryType.SHOP && onCtrlClick) {
         onCtrlClick(item); // Call onCtrlClick for shop items
@@ -232,6 +279,7 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
             !canCraftItem(item, inventoryType)
             ? 'brightness(80%) grayscale(100%)'
             : undefined,
+        cursor: isHidden ? 'pointer' : undefined,
         opacity: isDragging ? 0.4 : 1.0,
         boxShadow: isOver
           ? 'inset 0px 0px 20px -12px rgba(255,255,255, 0.1)'
@@ -248,6 +296,7 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
             position: 'absolute',
             inset: 0,
             pointerEvents: 'none',
+            zIndex: 2,
             background: `
               linear-gradient(to right, ${withAlpha(rarityColor, 0.9)}, transparent) top left / 20% 2px no-repeat,
               linear-gradient(to bottom, ${withAlpha(rarityColor, 0.9)}, transparent) top left / 2px 20% no-repeat,
@@ -264,6 +313,22 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
             `,
           }}
         />
+      )}
+      {(isHidden || revealedItem) && (
+        <div
+          className={`inventory-slot-hidden${revealedItem ? ' searching' : ''}`}
+          style={{ ['--search-duration' as any]: `${SEARCH_DURATION}ms` }}
+        >
+          <div className="inventory-slot-hidden-cover" />
+          {revealedItem && (
+            <div
+              className="inventory-slot-hidden-reveal"
+              style={{ backgroundImage: `url(${getItemUrl(revealedItem as SlotWithItem)})` }}
+            />
+          )}
+          {revealedItem && <div className="inventory-slot-hidden-scan" />}
+          <i className="fa-solid fa-question inventory-slot-hidden-mark" />
+        </div>
       )}
       {isSlotWithItem(item) && !hideItemDetails && (
         <div className="item-slot-wrapper">

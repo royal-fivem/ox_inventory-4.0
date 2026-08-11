@@ -41,7 +41,6 @@ files {
     'web/build/assets/*.js',
     'web/build/assets/*.css',
     'web/build/assets/*.ogg',
-    'web/build/sounds/*.*',
     'web/images/*.png',
     -- 'web/images/*.webp',
     'modules/**/shared.lua',
