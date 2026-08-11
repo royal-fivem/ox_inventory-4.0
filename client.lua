@@ -1039,20 +1039,6 @@ local function registerCommands()
     registerCommands = nil
 end
 
-Citizen.CreateThread(function()
-    exports.ox_target:addGlobalVehicle({
-        {
-            name = 'ox_inventory:openTrunk',
-            icon = 'fas fa-truck-ramp-box',
-            label = 'Åben bagagerum',
-            distance = 4.5,
-            onSelect = function(data)
-                Inventory.OpenTrunk(data.entity)
-            end
-        },
-    })
-end)
-
 function client.closeInventory(server)
     if not client.interval then return end
 
