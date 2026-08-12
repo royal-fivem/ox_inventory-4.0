@@ -1578,6 +1578,14 @@ input[type='number']::-webkit-outer-spin-button {
   animation: item-notify-line-in 260ms ease 180ms both;
 }
 
+.item-notify-line.tone-added {
+  background: linear-gradient(90deg, transparent, rgba(162, 202, 49, 0.85), transparent);
+}
+
+.item-notify-line.tone-removed {
+  background: linear-gradient(90deg, transparent, rgba(255, 92, 92, 0.85), transparent);
+}
+
 // row of slots under the shared title (grouped notifications)
 .item-notify-row {
   display: flex;

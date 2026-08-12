@@ -126,7 +126,7 @@ const NotificationBatch = React.forwardRef<HTMLDivElement, { batch: Batch }>(({ 
   return (
     <div className="item-notify" ref={ref}>
       <div className="item-notify-title">{title}</div>
-      <div className="item-notify-line" />
+      <div className={`item-notify-line tone-${batch.tone}`} />
       <div className="item-notify-row">
         {batch.items.map((ni, i) => (
           <NotifySlot key={i} item={ni.item} count={ni.count} />
